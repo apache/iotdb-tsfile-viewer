@@ -31,9 +31,13 @@
 - [Contributing](#Contributing)
 - [Contributors](#Contributors)
 # Introduction
-tsfile-mt is a TsFile management tool. Currently, we support bit granularity parsing of TsFile and provide
-visual display.
-1. ChunkGroup and Index display: This tool can Clearly display information of each part of TsFile, details are as follows:
+tsfile-viewer is a tool to view TSFILE. Currently, we support bit granularity parsing of TsFile and provide visual display.  
+we have three modules in the project
+- tsfile-viewer-core: core jar package project
+- tsfile-viewer-web: web viewer backend,When you execute the mvn install command in the parent project, it will package the front-end project code together
+- tsfile-viewer-web-frontend: web viewer frontend
+
+1. overview: This tool can Clearly display information of each part of TsFile, details are as follows:
     1. The versionNumber.
     2. The data layer: contains details of each level and statistic information.
 
@@ -44,39 +48,42 @@ visual display.
        iii. Page
 
        iv. Point
-    3. The index layer: displayed in a B+ tree like structure then you can easily view the overall structure of the secondary
+    3. The index layer: displayed in a tree like structure then you can easily view the overall structure of the secondary
        index(entity and measurement granularity).
 
 2. Timeseries and measurement search: In addition to displaying data, we also provide the function of querying TimeSeries by keyword. There is a linkage
    between the index layer and the data layer, it can quickly locate the desired TimeSeries with details.
 
-3. The encoding and compression type of a timeseries analysis: tsfile-mt provide the analysis of the current timeseries encoding and compression. In addition, tsfile-mt also provide the analysis
-   of the combination of various encoding and compression types of the timeseries.
+<!-- 3. The encoding and compression type of a timeseries analysis: tsfile-mt provide the analysis of the current timeseries encoding and compression. In addition, tsfile-mt also provide the analysis
+   of the combination of various encoding and compression types of the timeseries. -->
 
 # Quick Start
 ## Prerequisites
-To use Tool-offline-for-IoTDB, you need to have:
-1. Java >= 1.8 (Note: Because we use JavaFx to develop front end and JavaFx is dependent in JDK11, if the version of
-   the JDK you use > 1.8, you need to import the relevant libraries.)
-2. Maven >= 3.6
+To use the tool, you need to have:
+1. Java >= 1.8 
+2. Maven >= 3.6  
+
+Of course, you will also notice that there is a front-end project in the project. When you execute the mvn install command, the project will download its corresponding environment, and you don't have to configure the environment separately for it.
 ## Compile
 You can download the source code from:
 ```
-git clone https://github.com/lpf4254302/tsfile-mt.git
+git@github.com:apache/iotdb-tsfile-viewer.git
+https://github.com/apache/iotdb-tsfile-viewer.git
 ```
-Under the root path of tsfile-mt:
+Under the root path of iotdb-tsfile-viewer:
 ```
 mvn clean install
 ```
-Under the root path of tsfile-mt-ui project, use the following command to assemble the project into a executable jar:
+then you can start this tool in the tsfile-viewer-web project 
+
 ```
-mvn assembly:assembly -D skipTests
-```
-The you can use the following command to start the project directly:
-```
-java -cp .\tsfile-mt-ui-0.2.0-SNAPSHOT-jar-with-dependencies.jar org.apache.iotdb.tool.ui.IUIApplication
+java -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
 ```
 
+The default url is
+```
+http://localhost:8080/
+```
 # Maintainers
 
 # Contributing
