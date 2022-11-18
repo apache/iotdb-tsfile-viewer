@@ -228,10 +228,6 @@
 							<!-- 前端资源目录，即：存放前端包目录-->
 							<directory>src/main/resources/static</directory>
 						</fileset>
-						<fileset>
-							<!-- front项目打包自动生成的dist目录 -->
-							<directory>${frontend-project-dist-dir}</directory>
-						</fileset>
 					</filesets>
 				</configuration>
 			</plugin>
