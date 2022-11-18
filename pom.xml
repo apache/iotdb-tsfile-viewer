@@ -117,6 +117,7 @@
                             <exclude>**/*.json</exclude>
                             <exclude>**/yarn.lock</exclude>
                             <exclude>**/node/**</exclude>
+                            <exclude>**/resources/static/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
