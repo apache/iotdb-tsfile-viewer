@@ -87,7 +87,6 @@ http://localhost:8080/
 You can modify the port through the file
 ```
 iotdb-tsfile-viewer\tsfile-viewer-web-frontend\config\config.js
-iotdb-tsfile-viewer\tsfile-viewer-web-frontend\config\oneapi.js
 tsfile-viewer-web\src\main\resources\application.yml
 ```
 # Maintainers
