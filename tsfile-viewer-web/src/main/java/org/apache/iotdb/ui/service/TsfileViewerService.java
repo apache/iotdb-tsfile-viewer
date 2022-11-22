@@ -119,18 +119,20 @@ public class TsfileViewerService {
     return fileRecordList;
   }
 
-  public List<FileRecord> getLoadedFiles(){
-    List<FileRecord> fileRecordList = tsfileViewerContainer.getContainer().keySet().stream()
-             .map(path->{
-               FileRecord fileRecord = new FileRecord();
-               fileRecord.setName(path.substring(baseDirectoryPath.length()));
-               fileRecord.setStatus(LoadStatus.LOADED);
-               fileRecord.setType(FileType.FILE);
-               fileRecord.setSameFolder(false);
-               return fileRecord;
-             })
-             .collect(Collectors.toList());
-    if(fileRecordList == null){
+  public List<FileRecord> getLoadedFiles() {
+    List<FileRecord> fileRecordList =
+        tsfileViewerContainer.getContainer().keySet().stream()
+            .map(
+                path -> {
+                  FileRecord fileRecord = new FileRecord();
+                  fileRecord.setName(path.substring(baseDirectoryPath.length()));
+                  fileRecord.setStatus(LoadStatus.LOADED);
+                  fileRecord.setType(FileType.FILE);
+                  fileRecord.setSameFolder(false);
+                  return fileRecord;
+                })
+            .collect(Collectors.toList());
+    if (fileRecordList == null) {
       return new ArrayList<>();
     }
     return fileRecordList;
@@ -797,13 +799,14 @@ public class TsfileViewerService {
     PageModel pageModel = new PageModel();
     pageModel.setPageNo(1);
     pageModel.setPageSize(3);
-    Page<ChunkGroupInfo> pageChunkGroup = getChunkGroupList(path,pageModel,null);
-    Page<TimeseriesIndexVO> pageTimeseriesIndex = getTimeseriesIndexList(path,pageModel,new QueryByTimeseriesIndexReq());
+    Page<ChunkGroupInfo> pageChunkGroup = getChunkGroupList(path, pageModel, null);
+    Page<TimeseriesIndexVO> pageTimeseriesIndex =
+        getTimeseriesIndexList(path, pageModel, new QueryByTimeseriesIndexReq());
     Map<String, Object> res = new HashMap<>();
     res.put("version", version);
     res.put("metadataSize", metadataSize);
-    res.put("chunkGroupList",pageChunkGroup.getPageItems());
-    res.put("timeseriesIndexList",pageTimeseriesIndex.getPageItems());
+    res.put("chunkGroupList", pageChunkGroup.getPageItems());
+    res.put("timeseriesIndexList", pageTimeseriesIndex.getPageItems());
     return res;
   }
 

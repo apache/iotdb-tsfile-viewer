@@ -90,14 +90,14 @@ public class TsfileViewerController {
     try {
       List<FileRecord> recordList = tsfileViewerService.getLoadedFiles();
       return BaseVO.success("success", recordList);
-    }catch (Exception e) {
+    } catch (Exception e) {
       return new BaseVO<>(
-              TsfileViewerException.UNHANDLED_EXCEPTION,
-              new StringBuilder(MessageUtil.get(TsfileViewerException.UNHANDLED_EXCEPTION))
-                      .append(":")
-                      .append(e.getMessage())
-                      .toString(),
-              null);
+          TsfileViewerException.UNHANDLED_EXCEPTION,
+          new StringBuilder(MessageUtil.get(TsfileViewerException.UNHANDLED_EXCEPTION))
+              .append(":")
+              .append(e.getMessage())
+              .toString(),
+          null);
     }
   }
 

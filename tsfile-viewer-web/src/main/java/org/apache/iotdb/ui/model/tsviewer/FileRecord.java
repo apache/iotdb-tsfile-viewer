@@ -25,7 +25,7 @@ public class FileRecord {
   private FileType type;
   private boolean canRead;
   private LoadStatus status;
-  //是否查询的是同一个父级文件夹的子文件/文件夹
+  // 是否查询的是同一个父级文件夹的子文件/文件夹
   private boolean sameFolder;
   // private String path;
 
