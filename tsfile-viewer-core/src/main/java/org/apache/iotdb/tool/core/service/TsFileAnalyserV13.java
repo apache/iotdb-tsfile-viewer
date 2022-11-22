@@ -1139,12 +1139,22 @@ public class TsFileAnalyserV13 {
                   .map(chunkOffsetInfo -> chunkOffsetInfo.getMeasurementId())
                   .collect(Collectors.toList()));
       tableInfo.getTitle().set(0, "timestamp");
+      // 查找当前page在timeChunk中的位置
+      List<PageOffsetInfo> pageOffsetListInTimeChunk =
+          fetchPageOffsetListByChunkOffset(chunkOffsetInfoList.get(0).getOffset());
+      int positionInTimmeChunkPages = 0;
+      for (int i = 0; i < pageOffsetListInTimeChunk.size(); i++) {
+        if (pageOffsetInfo.getOffset() == pageOffsetListInTimeChunk.get(i).getOffset()) {
+          positionInTimmeChunkPages = i;
+          break;
+        }
+      }
 
       for (int i = 1; i < chunkOffsetInfoList.size(); i++) {
         long valueChunkOffset = chunkOffsetInfoList.get(i).getOffset();
         List<PageOffsetInfo> pageOffsetInfoList =
             fetchPageOffsetListByChunkOffset(valueChunkOffset);
-        valuePageInfoList.addAll(pageOffsetInfoList);
+        valuePageInfoList.add(pageOffsetInfoList.get(positionInTimmeChunkPages));
       }
 
       reader.position(pageOffsetInfo.getOffset());
@@ -1255,11 +1265,22 @@ public class TsFileAnalyserV13 {
                   .map(chunkOffsetInfo -> chunkOffsetInfo.getMeasurementUid())
                   .collect(Collectors.toList()));
 
+      // 查找当前page在timeChunk中的位置
+      List<PageOffsetInfo> pageOffsetListInTimeChunk =
+          fetchPageOffsetListByChunkOffset(timeChunk.getOffsetOfChunkHeader());
+      int positionInTimmeChunkPages = 0;
+      for (int i = 0; i < pageOffsetListInTimeChunk.size(); i++) {
+        if (timeseriesIndexOffsetInfo.getOffset() == pageOffsetListInTimeChunk.get(i).getOffset()) {
+          positionInTimmeChunkPages = i;
+          break;
+        }
+      }
+
       for (int i = 0; i < valueChunkList.size(); i++) {
         long valueChunkOffset = valueChunkList.get(i).getOffsetOfChunkHeader();
         List<PageOffsetInfo> pageOffsetInfoList =
             fetchPageOffsetListByChunkOffset(valueChunkOffset);
-        valuePageInfoList.addAll(pageOffsetInfoList);
+        valuePageInfoList.add(pageOffsetInfoList.get(positionInTimmeChunkPages));
       }
 
       reader.position(timeseriesIndexOffsetInfo.getOffset());
