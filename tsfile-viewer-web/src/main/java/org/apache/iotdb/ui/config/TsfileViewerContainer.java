@@ -101,4 +101,12 @@ public class TsfileViewerContainer {
   public TsfileViewerContainer tsFileViewerContainer() {
     return new TsfileViewerContainer();
   }
+
+  public Map<String, TsFileAnalyserV13> getContainer() {
+    return container;
+  }
+
+  public void setContainer(Map<String, TsFileAnalyserV13> container) {
+    this.container = container;
+  }
 }

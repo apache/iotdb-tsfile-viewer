@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Modal } from 'antd';
+import { Modal,Tooltip } from 'antd';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import React, { useState } from 'react';
 import MoreChunkGroup from './moreChunkGroup';
 import MoreIndexOfTimeseriesIndex from './moreIndexOfTimeseriesIndex';
@@ -33,13 +34,42 @@ const PopDetails = (props) => {
 
     const showtitle = (key) => {
         if (key == "ITIMORE") {
-            return "IndexOfTimeseriesIndex";
+            return <>
+                <Tooltip placement="bottom" title={<span>
+                    {intl.formatMessage({ id: 'tsviewer.popDetail.indexOfTimeseriesIndex.explanation', })}<br />
+                </span>}>
+                    <QuestionCircleOutlined />
+                </Tooltip>
+                <span>
+                    {"\u00A0\u00A0 IndexOfTimeseriesIndex"}
+                </span>
+            </>
         }
         if (key == "CGMORE") {
-            return "ChunkGroup";
+            return <>
+                <Tooltip placement="bottom" title={<span>
+                    {intl.formatMessage({ id: 'tsviewer.popDetail.chunkgroup.explanation', })}<br />
+                    {intl.formatMessage({ id: 'tsviewer.popDetail.chunkgroup.explanation1', })}<br />
+                </span>}>
+                    <QuestionCircleOutlined />
+                </Tooltip>
+                <span>
+                    {"\u00A0\u00A0 ChunkGroup"}
+                </span>
+            </>
         }
         if (key == "TIMORE") {
-            return "TimeseriesIndex";
+            return <>
+                <Tooltip placement="bottom" title={<span>
+                    {intl.formatMessage({ id: 'tsviewer.popDetail.timeseriesIndex.explanation', })}<br />
+                    {intl.formatMessage({ id: 'tsviewer.popDetail.timeseriesIndex.explanation1', })}<br />
+                </span>}>
+                    <QuestionCircleOutlined />
+                </Tooltip>
+                <span>
+                    {"\u00A0\u00A0 TimeseriesIndex"}
+                </span>
+            </>
         }
     }
 

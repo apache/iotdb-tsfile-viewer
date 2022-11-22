@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 import React, { useState, useEffect } from "react";
-import { Card, Layout, Button, Drawer, Tree, Input, Row, Col, PageHeader, notification, Pagination, Table } from 'antd';
+import { Card, Layout, Button, Drawer, Tree, Input, PageHeader, notification, Pagination, Table, Tooltip } from 'antd';
 import styles from '../style.less'
-import { GroupOutlined, AppstoreOutlined, CopyOutlined } from '@ant-design/icons';
+import { GroupOutlined, RetweetOutlined, CopyOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import {
     getChunkGroupsListUsingPOST, getChunkGroupInfoUsingPOST, getChunkListUsingPOST, getPageListUsingPOST
     , getPageInfoUsingPOST
@@ -47,10 +47,7 @@ const MoreChunkGroup = (props) => {
 
     const gridStyle = {
         width: '100%',
-        height: '70px',
-        // textAlign: 'center',
         background: "#f2f2f2",
-        border: '1px solid grey'
     };
 
     const showChunkGroupDetails = async (cg) => {
@@ -90,7 +87,7 @@ const MoreChunkGroup = (props) => {
 
     };
 
-    const updateTreeData = (list, key, children) =>{
+    const updateTreeData = (list, key, children) => {
         return list.map((node) => {
             if (node.key === key) {
                 return {
@@ -108,7 +105,7 @@ const MoreChunkGroup = (props) => {
             return node;
         });
     }
-        
+
 
     const onLoadData = async ({ key, children }) => {
         let res = await getPageListUsingPOST({ offset: key, filePath: filePath })
@@ -152,22 +149,56 @@ const MoreChunkGroup = (props) => {
             param['chunkGroupOffset'] = details.offset;
             param['filePath'] = filePath;
             let res = await getPageInfoUsingPOST(param)
-
             if (res.code == 0) {
                 //pagedata信息
-                let cols = Object.values(res.data.title).map((titleName, key) => {
-                    return {
-                        title: titleName,
-                        dataIndex: titleName,
-                        key: titleName,
-                        render: (text, record, index) => {
-                            if (titleName == 'timestamp') {
-                                return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                let cols = [{
+                    title: 'No',
+                    fixed: 'left',
+                    width: '100px',
+                    // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
+                    render: (text, record, index) => {
+                        return index + 1
+                    }
+
+                }]
+                cols.push(...Object.values(res.data.title).map((titleName, key) => {
+                    if (titleName == 'timestamp') {
+                        return {
+                            title: titleName,
+                            dataIndex: titleName,
+                            key: titleName,
+                            fixed: 'left',
+                            width: '250px',
+                            render: (text, record, index) => {
+                                return (<>
+                                    <span id={index}>
+                                        {moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')}
+                                    </span> 
+                                    <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                    <RetweetOutlined 
+                                        onClick={(e) => {
+                                            if (document.getElementById(index).innerText.indexOf("-") > -1) {
+                                                document.getElementById(index).innerText = record[key]
+                                            } else {
+                                                document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                            }
+                                        }} />
+                                </>)
+
+                                // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                             }
-                            return record[key]
+                        }
+                    } else {
+                        return {
+                            title: titleName,
+                            dataIndex: titleName,
+                            key: titleName,
+                            render: (text, record, index) => {
+                                return record[key]
+                            }
                         }
                     }
-                })
+                }))
                 setColumnsLength(cols.length)
                 setColumns(cols)
                 setPageData(res.data.values);
@@ -184,7 +215,8 @@ const MoreChunkGroup = (props) => {
         const show = () => {
             if (details != undefined && details != '') {
                 return (
-                    <pre style={{height:"55vh",overflow:"scroll"}}>{"ChunkGroup "+intl.formatMessage({ id: 'tsviewer.more.briefInfo', })+"：\n"}
+                    <pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>
+                        {"ChunkGroup " + intl.formatMessage({ id: 'tsviewer.more.briefInfo', }) + "：\n"}
                         {"offset:"}{details.offset + "\n"}
                         {"CGH:\n"}{JSON.stringify(details.cgh, null, '\t')}{"\n"}
                         {"FIRST CH:\n"}{JSON.stringify(details.ch, null, '\t')}{"\n"}
@@ -204,13 +236,18 @@ const MoreChunkGroup = (props) => {
         if (res.code == 0) {
             let list = Object.values(res.data.pageItems)
             setTotalSize(res.data.totalCount)
+            setDetails()
             setCardList(list.map((cg, key) => {
                 return (
-                    <Card.Grid key={key}
-                        info={JSON.stringify(cg)} style={gridStyle}
-                        onClick={(event) => { showChunkGroupDetails(event.currentTarget.getAttribute('info')) }}>
-                        <strong>{cg.deviceName}</strong>
-                    </Card.Grid>
+                    <div style={{ backgroud: "white", margin: '4px 0px 0px 0px' }}>
+                        <Card.Grid key={key} id={"cardgrid" + key}
+                            style={gridStyle}
+                            hoverable={false}
+                            onClick={() => { selectCard("cardgrid" + key), showChunkGroupDetails(JSON.stringify(cg)) }}>
+                            <strong>{cg.deviceName}</strong>
+                        </Card.Grid>
+                    </div>
+
                 )
             }))
             setPageNo(page)
@@ -219,6 +256,20 @@ const MoreChunkGroup = (props) => {
                 message: res.message,
             });
         }
+    }
+    //记录card选中项
+    var cardSelect;
+    const selectCard = (id) => {
+        if (id == cardSelect) {
+            return
+        }
+        var card = document.getElementById(id);
+        card.style.background = "#FC4C2F"
+        var oldCard = document.getElementById(cardSelect);
+        if (oldCard != null) {
+            oldCard.style.background = "#f2f2f2";
+        }
+        cardSelect = id;
     }
 
     useEffect(() => {
@@ -229,7 +280,7 @@ const MoreChunkGroup = (props) => {
         <div className={styles.sitedrawerrenderincurrentwrapper}>
             <Layout>
                 <Sider width="55%" style={{ height: "70vh", width: "60%", background: "white", padding: 5 }}>
-                    <div style={{ height: "68vh", overflow: "auto" }}>
+                    <div style={{ height: "70vh", overflow: "auto" }}>
                         <PageHeader
                             extra={(
                                 <Search
@@ -243,15 +294,14 @@ const MoreChunkGroup = (props) => {
                                 />
                             )}>
                         </PageHeader>
-                        <Card style={{ padding: 3 }}>
+                        <Card style={{ height: "54vh", overflow: "auto" }}>
                             {cardList}
                         </Card>
-                        <Row>
-                            <Col span={2}></Col>
-                            <Col span={22}><Pagination size="small" current={pageNo} pageSize={pageSize} total={totalSize}
+                        <div style={{ width: "100%", textAlign: "center" }}>
+                            <Pagination style={{ margin: '20px 0px 0px 0px' }} current={pageNo} pageSize={pageSize} total={totalSize}
                                 showQuickJumper={true}
-                                onChange={(page, pSize) => { generateChunkGroupCards(page, pSize) }} showSizeChanger={false} /></Col>
-                        </Row>
+                                onChange={(page, pSize) => { setCardList([]), generateChunkGroupCards(page, pSize) }} showSizeChanger={false} />
+                        </div>
                     </div>
                 </Sider>
                 <Layout>
@@ -267,7 +317,18 @@ const MoreChunkGroup = (props) => {
                 </Layout>
             </Layout>
             <Drawer
-                title="ChunkInfo"
+                title={<>
+                    <Tooltip placement="bottom" title={<span>
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation', })}<br />
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation1', })}<br />
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation2', })}<br />
+                    </span>}>
+                        <QuestionCircleOutlined />
+                    </Tooltip>
+                    <span>
+                        {"\u00A0\u00A0 ChunkInfo"}
+                    </span>
+                </>}
                 width={"80%"}
                 closable={false}
                 destroyOnClose={true}
@@ -285,20 +346,29 @@ const MoreChunkGroup = (props) => {
                 </div>
 
                 <Drawer
-                    title="PageInfo"
+                    title={<>
+                        <Tooltip placement="bottom" title={<span>
+                            {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.pageData.explanation', })}<br />
+                        </span>}>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
+                        <span>
+                            {"\u00A0\u00A0 PageData"}
+                        </span>
+                    </>}
                     width={"75%"}
                     closable={false}
                     destroyOnClose={true}
                     onClose={onClosePage}
                     open={openPage}
                 >
-                    <Table columns={columns} dataSource={pageData} scroll={{x:150*columnsLength,y:"80vh"}}
-                        pagination={{ defaultPageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
+                    <Table columns={columns} dataSource={pageData} scroll={{ x: 150 * columnsLength, y: "80vh" }}
+                        pagination={{ pageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
                         bordered />
                 </Drawer>
             </Drawer>
 
-        </div>
+        </div >
     )
 }
 

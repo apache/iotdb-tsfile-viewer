@@ -305,3 +305,11 @@ export async function unLoadFileUsingPOST(
     ...(options || {}),
   });
 }
+
+/** /api/ts-viewer/loaded-files 获取已经加载的文件列表 POST /api/ts-viewer/loaded-files */
+export async function showLoadedFileListUsingPOST(options?: { [key: string]: any }) {
+  return request<API.BaseVOObject_>('/api/ts-viewer/loaded-files', {
+    method: 'POST',
+    ...(options || {}),
+  });
+}

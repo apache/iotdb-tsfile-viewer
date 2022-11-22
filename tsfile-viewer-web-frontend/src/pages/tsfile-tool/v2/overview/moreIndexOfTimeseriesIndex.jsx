@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 import React, { useState, useEffect } from "react";
-import { Card, Layout, Button, Drawer, Tree, Input, Row, Col, DatePicker, PageHeader, notification, Table } from 'antd';
+import { Card, Layout, Button, Drawer, Tree, Input, Tooltip, DatePicker, PageHeader, notification, Table } from 'antd';
 import { Tree as TreeArborist } from "react-arborist";
 import styles from '../style.less'
-import { RightOutlined, GroupOutlined, MinusSquareOutlined, PlusSquareOutlined, CopyOutlined } from '@ant-design/icons';
+import { RightOutlined, GroupOutlined, MinusSquareOutlined, PlusSquareOutlined, CopyOutlined, RetweetOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import {
     getChunkListUsingPOST, getPageListUsingPOST, getIndexOfTimeseriesIndexTreeUsingPOST
     , getPageInfoThroughTimeseriesIndexOffsetUsingPOST, getTimeseriesIndexListNoPagingUsingPOST
@@ -90,19 +90,54 @@ const MoreIndexOfTimeseriesIndex = (props) => {
             let res = await getPageInfoThroughTimeseriesIndexOffsetUsingPOST(param)
             if (res.code == 0) {
                 //pagedata信息
-                let cols = Object.values(res.data.title).map((titleName, key) => {
-                    return {
-                        title: titleName,
-                        dataIndex: titleName,
-                        key: titleName,
-                        render: (text, record, index) => {
-                            if (titleName == 'timestamp') {
-                                return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                let cols = [{
+                    title: 'No',
+                    fixed: 'left',
+                    width: '100px',
+                    // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
+                    render: (text, record, index) => {
+                        return index + 1
+                    }
+
+                }]
+                cols.push(...Object.values(res.data.title).map((titleName, key) => {
+                    if(titleName == 'timestamp'){
+                        return {
+                            title: titleName,
+                            dataIndex: titleName,
+                            key: titleName,
+                            fixed: 'left',
+                            width: '250px',
+                            render: (text, record, index) => {
+                                return (<>
+                                    <span id={index}>
+                                        {moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')}
+                                    </span> 
+                                    <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                    <RetweetOutlined 
+                                        onClick={(e) => {
+                                            if (document.getElementById(index).innerText.indexOf("-") > -1) {
+                                                document.getElementById(index).innerText = record[key]
+                                            } else {
+                                                document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                            }
+                                        }} />
+                                </>)
+
+                                // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                             }
-                            return record[key]
+                        }
+                    }else{
+                        return {
+                            title: titleName,
+                            dataIndex: titleName,
+                            key: titleName,
+                            render: (text, record, index) => {
+                                return record[key]
+                            }
                         }
                     }
-                })
+                }))
                 setColumnsLength(cols.length)
                 setColumns(cols)
                 setPageData(res.data.values);
@@ -366,7 +401,18 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                 </Layout>
             </Layout>
             <Drawer
-                title="ChunkInfo"
+                title={<>
+                    <Tooltip placement="bottom" title={<span>
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation', })}<br />
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation1', })}<br />
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation2', })}<br />
+                    </span>}>
+                        <QuestionCircleOutlined />
+                    </Tooltip>
+                    <span>
+                        {"\u00A0\u00A0 ChunkInfo"}
+                    </span>
+                </>}
                 width={"80%"}
                 closable={false}
                 destroyOnClose={true}
@@ -386,7 +432,16 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                 </div>
 
                 <Drawer
-                    title="PageInfo"
+                    title={<>
+                        <Tooltip placement="bottom" title={<span>
+                            {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.pageData.explanation', })}<br />
+                        </span>}>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
+                        <span>
+                            {"\u00A0\u00A0 PageData"}
+                        </span>
+                    </>}
                     width={"75%"}
                     closable={false}
                     destroyOnClose={true}

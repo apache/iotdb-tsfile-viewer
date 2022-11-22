@@ -84,6 +84,23 @@ public class TsfileViewerController {
     }
   }
 
+  @ApiOperation(value = "/api/ts-viewer/loaded-files", notes = "获取已经加载的文件列表")
+  @PostMapping("/api/ts-viewer/loaded-files")
+  public BaseVO<Object> showLoadedFileList() {
+    try {
+      List<FileRecord> recordList = tsfileViewerService.getLoadedFiles();
+      return BaseVO.success("success", recordList);
+    }catch (Exception e) {
+      return new BaseVO<>(
+              TsfileViewerException.UNHANDLED_EXCEPTION,
+              new StringBuilder(MessageUtil.get(TsfileViewerException.UNHANDLED_EXCEPTION))
+                      .append(":")
+                      .append(e.getMessage())
+                      .toString(),
+              null);
+    }
+  }
+
   @ApiOperation(value = "/api/ts-viewer/files/load-file", notes = "加载文件")
   @PostMapping("/api/ts-viewer/files/load-file")
   public BaseVO<Object> loadFile(String filePath) {

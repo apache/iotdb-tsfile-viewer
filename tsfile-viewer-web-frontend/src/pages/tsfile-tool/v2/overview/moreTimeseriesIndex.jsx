@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 import React, { useState, useEffect } from "react";
-import { Card, Layout, Button, Drawer, Tree, Input, Row, Col, DatePicker, Pagination, notification, Table, PageHeader } from 'antd';
+import { Card, Layout, Button, Drawer, Tree, Input, Tooltip, DatePicker, Pagination, notification, Table, PageHeader } from 'antd';
 import styles from '../style.less'
-import { GroupOutlined, CopyOutlined } from '@ant-design/icons';
+import { GroupOutlined, CopyOutlined, RetweetOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import {
     getTimeseriesIndexListUsingPOST, getChunkListUsingPOST, getPageListUsingPOST
     , getPageInfoThroughTimeseriesIndexOffsetUsingPOST, getTimeseriesIndexInfoUsingPOST
@@ -53,10 +53,7 @@ const MoreTimeseriesIndex = (props) => {
 
     const gridStyle = {
         width: '100%',
-        height: '70px',
-        // textAlign: 'center',
         background: "#f2f2f2",
-        border: '1px solid grey'
     };
 
 
@@ -165,19 +162,53 @@ const MoreTimeseriesIndex = (props) => {
             let res = await getPageInfoThroughTimeseriesIndexOffsetUsingPOST(param)
             if (res.code == 0) {
                 //pagedata信息
-                let cols = Object.values(res.data.title).map((titleName, key) => {
-                    return {
-                        title: titleName,
-                        dataIndex: titleName,
-                        key: titleName,
-                        render: (text, record, index) => {
-                            if (titleName == 'timestamp') {
-                                return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                let cols = [{
+                    title: 'No',
+                    fixed: 'left',
+                    width: '100px',
+                    // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
+                    render: (text, record, index) => {
+                        return index + 1
+                    }
+                }]
+                cols.push(...Object.values(res.data.title).map((titleName, key) => {
+                    if(titleName == 'timestamp'){
+                        return {
+                            title: titleName,
+                            dataIndex: titleName,
+                            key: titleName,
+                            fixed: 'left',
+                            width: '250px',
+                            render: (text, record, index) => {
+                                return (<>
+                                    <span id={index}>
+                                        {moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')}
+                                    </span> 
+                                    <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                    <RetweetOutlined 
+                                        onClick={(e) => {
+                                            if (document.getElementById(index).innerText.indexOf("-") > -1) {
+                                                document.getElementById(index).innerText = record[key]
+                                            } else {
+                                                document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                            }
+                                        }} />
+                                </>)
+
+                                // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                             }
-                            return record[key]
+                        }
+                    }else{
+                        return {
+                            title: titleName,
+                            dataIndex: titleName,
+                            key: titleName,
+                            render: (text, record, index) => {
+                                return record[key]
+                            }
                         }
                     }
-                })
+                }))
                 setColumnsLength(cols.length)
                 setColumns(cols)
                 setPageData(res.data.values);
@@ -195,9 +226,10 @@ const MoreTimeseriesIndex = (props) => {
         const show = () => {
             if (details != undefined && details != '') {
                 return (
-                    <pre style={{ height: "55vh", overflow: "scroll" }}>{"TimeseriesIndex +" + intl.formatMessage({ id: 'tsviewer.more.briefInfo', }) + "+：\n"}
+                    <pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>
+                        {"TimeseriesIndex +" + intl.formatMessage({ id: 'tsviewer.more.briefInfo', }) + "+：\n"}
                         {"offset:"}{details.offset + "\n"}
-                        {"MEASUREMENTIDS:\n"}{currentTimeseriesIndex}{"\n"}
+                        {"MEASUREMENTIDS:"}{currentTimeseriesIndex}{"\n"}
                         {"TM:\n"}{JSON.stringify(details.tm, null, '\t')}{"\n"}
                         {"FIRST CM:\n"}{JSON.stringify(details.cm, null, '\t')}{"\n"}
                     </pre>
@@ -226,11 +258,14 @@ const MoreTimeseriesIndex = (props) => {
             setTotalSize(res.data.totalCount)
             setCardList(list.map((ti, key) => {
                 return (
-                    <Card.Grid key={key}
-                        info={JSON.stringify(ti)} style={gridStyle}
-                        onClick={(event) => { showTimeseriesIndexDetails(event.currentTarget.getAttribute('info')) }}>
-                        <strong>device:{ti.deviceId} {ti.aligned == true ? '' : '  || measurement:' + ti.measurementId}</strong>
-                    </Card.Grid>
+                    <div style={{ backgroud: "white", margin: '4px 0px 0px 0px' }}>
+                        <Card.Grid key={key} id={"cardgrid" + key}
+                            style={gridStyle}
+                            hoverable={false}
+                            onClick={() => { selectCard("cardgrid" + key), showTimeseriesIndexDetails(JSON.stringify(ti)) }}>
+                            <strong style={{ whiteSpace: 'pre-wrap' }}>[DEVICE]{ti.deviceId} {ti.aligned == true ? '' : '\n[MEASUREMENT]:' + ti.measurementId}</strong>
+                        </Card.Grid>
+                    </div>
                 )
             }))
             setPageNo(page)
@@ -239,6 +274,21 @@ const MoreTimeseriesIndex = (props) => {
                 message: res.message,
             });
         }
+    }
+
+    //记录card选中项
+    var cardSelect;
+    const selectCard = (id) => {
+        if (id == cardSelect) {
+            return
+        }
+        var card = document.getElementById(id);
+        card.style.background = "#FC4C2F"
+        var oldCard = document.getElementById(cardSelect);
+        if (oldCard != null) {
+            oldCard.style.background = "#f2f2f2";
+        }
+        cardSelect = id;
     }
 
     useEffect(() => {
@@ -259,7 +309,7 @@ const MoreTimeseriesIndex = (props) => {
                                         showTime={{ format: 'HH:mm:ss' }}
                                         onChange={(date) => {
                                             if (date != null) {
-                                                date = date.set({millisecond: 0 })
+                                                date = date.set({ millisecond: 0 })
                                             }
                                             setBeginDate(isNaN(moment(date).valueOf()) ? '' : moment(date).valueOf())
                                         }}
@@ -270,7 +320,7 @@ const MoreTimeseriesIndex = (props) => {
                                         showTime={{ format: 'HH:mm:ss' }}
                                         onChange={(date) => {
                                             if (date != null) {
-                                                date = date.set({millisecond: 0 })
+                                                date = date.set({ millisecond: 0 })
                                             }
                                             setEndDate(isNaN(moment(date).valueOf()) ? '' : moment(date).valueOf())
                                         }}
@@ -289,15 +339,14 @@ const MoreTimeseriesIndex = (props) => {
                                 </Button.Group>
                             )}>
                         </PageHeader>
-                        <Card style={{ padding: 3 }}>
+                        <Card style={{ height: "55vh", overflow: "auto" }}>
                             {cardList}
                         </Card>
-                        <Row>
-                            <Col span={2}></Col>
-                            <Col span={22}><Pagination size="small" current={pageNo} pageSize={pageSize} total={totalSize}
+                        <div style={{ width: "100%", textAlign: "center" }}>
+                            <Pagination style={{ margin: '20px 0px 0px 0px' }} current={pageNo} pageSize={pageSize} total={totalSize}
                                 showQuickJumper={true}
-                                onChange={(page, pSize) => { generateTimeSeriesCards(page, pSize) }} showSizeChanger={false} /></Col>
-                        </Row>
+                                onChange={(page, pSize) => { setCardList([]), generateTimeSeriesCards(page, pSize) }} showSizeChanger={false} />
+                        </div>
                     </div>
                 </Sider>
                 <Layout>
@@ -313,7 +362,18 @@ const MoreTimeseriesIndex = (props) => {
                 </Layout>
             </Layout>
             <Drawer
-                title="ChunkInfo"
+                title={<>
+                    <Tooltip placement="bottom" title={<span>
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation', })}<br />
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation1', })}<br />
+                        {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.chunk.explanation2', })}<br />
+                    </span>}>
+                        <QuestionCircleOutlined />
+                    </Tooltip>
+                    <span>
+                        {"\u00A0\u00A0 ChunkInfo"}
+                    </span>
+                </>}
                 width={"80%"}
                 closable={false}
                 destroyOnClose={true}
@@ -331,14 +391,23 @@ const MoreTimeseriesIndex = (props) => {
                 </div>
 
                 <Drawer
-                    title="PageInfo"
+                    title={<>
+                        <Tooltip placement="bottom" title={<span>
+                            {intl.formatMessage({ id: 'tsviewer.moreChunkGroup.pageData.explanation', })}<br />
+                        </span>}>
+                            <QuestionCircleOutlined />
+                        </Tooltip>
+                        <span>
+                            {"\u00A0\u00A0 PageData"}
+                        </span>
+                    </>}
                     width={"75%"}
                     closable={false}
                     destroyOnClose={true}
                     onClose={onClosePage}
                     open={openPage}
                 >
-                    <Table columns={columns} dataSource={pageData} scroll={{ x: 150 * columnsLength, y: "80vh" }}
+                    <Table columns={columns} dataSource={pageData} scroll={{ x: 180 * columnsLength, y: "80vh" }}
                         pagination={{ defaultPageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
                         bordered />
                 </Drawer>

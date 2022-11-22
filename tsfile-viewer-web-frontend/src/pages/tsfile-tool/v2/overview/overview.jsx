@@ -28,9 +28,9 @@ const Tsfile = (props) => {
     const { fileName,baseInfo } = props;
     const intl = useIntl();
 
-    const doMessageShow = (msg) => {
+    const doMessageShow = (msg,offset) => {
         props.showStructureContext()
-        props.doChange(msg)
+        props.doChange(msg,offset)
     }
     return (
         <>
@@ -44,13 +44,13 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "200px", padding: 5 }}>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup")}><h3 className={styles.hcenter}>ChunkGroup</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup",baseInfo.chunkGroupList[0]?baseInfo.chunkGroupList[0].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.chunkGroupList[0] == undefined ? "" : "ChunkGroup\n["+baseInfo.chunkGroupList[0].offset+"]"}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup")}><h3 className={styles.hcenter}>ChunkGroup</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup",baseInfo.chunkGroupList[1]?baseInfo.chunkGroupList[1].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.chunkGroupList[1] == undefined ? "" : "ChunkGroup\n["+baseInfo.chunkGroupList[1].offset+"]"}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup")}><h3 className={styles.hcenter}>ChunkGroup</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup",baseInfo.chunkGroupList[2]?baseInfo.chunkGroupList[2].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.chunkGroupList[2] == undefined ? "" : "ChunkGroup\n["+baseInfo.chunkGroupList[2].offset+"]"}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
                         <div className={styles.longStyle} onClick={() => doMessageShow("CGMORE")}><h3 className={styles.hcenter}>more infos</h3></div>
@@ -61,13 +61,13 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "200px", padding: 5 }}>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex")}><h3 className={styles.hcenter}>TimeseriesIndex</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex",baseInfo.timeseriesIndexList[0]?baseInfo.timeseriesIndexList[0].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.timeseriesIndexList[0] == undefined ? "" : "TimeseriesIndex\n["+baseInfo.timeseriesIndexList[0].offset+"]"}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex")}><h3 className={styles.hcenter}>TimeseriesIndex</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex",baseInfo.timeseriesIndexList[1]?baseInfo.timeseriesIndexList[1].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.timeseriesIndexList[1] == undefined ? "" : "TimeseriesIndex\n["+baseInfo.timeseriesIndexList[1].offset+"]"}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex")}><h3 className={styles.hcenter}>TimeseriesIndex</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex",baseInfo.timeseriesIndexList[2]?baseInfo.timeseriesIndexList[2].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.timeseriesIndexList[2] == undefined ? "" : "TimeseriesIndex\n["+baseInfo.timeseriesIndexList[2].offset+"]"}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
                         <div className={styles.longStyle} onClick={() => doMessageShow("TIMORE")}><h3 className={styles.hcenter}>more infos</h3></div>
@@ -111,7 +111,7 @@ const Tsfile = (props) => {
 }
 
 const ImageMessage = (props) => {
-    const { value, showStructureContext, filePath } = props;
+    const { value, offset, showStructureContext, filePath } = props;
     const [version, setVersion] = useState();
     const [tsfileMetaDataSize, setTsfileMetaDataSize] = useState();
 
@@ -137,21 +137,17 @@ const ImageMessage = (props) => {
         }
     }
 
-    const getTsfileMetaDataSize = async () => {
-
-    }
-
-    const showImage = (key) => {
+    const showImage = (key,offset) => {
         if (key == "TSFILE") {
             getVersion();
             let message = '说明：\n' +
                 'TSFILE 魔数 offset=0 size=6\n' +
                 'VERSION:' + version + ' 版本 offset=6 size=1\n' +
                 '文件末尾 TSFILE 标记结束 offset= 文件长度-6 size=6';
-            return (<pre>{message}</pre>);
+            return (<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{message}</pre>);
         }
 
-        if (key == "ChunkGroup") {
+        if (key == "ChunkGroup" && offset != undefined) {
             return (
                 <div className={styles.detailRow}>
                     <div className={styles.chunkgroup} >
@@ -187,7 +183,7 @@ const ImageMessage = (props) => {
         }
 
         // || key == "TIMORE"
-        if (key == "TimeseriesIndex") {
+        if (key == "TimeseriesIndex"  && offset != undefined) {
             return (
                 <div className={styles.detailRow}>
                     <div className={styles.chunkgroup} >
@@ -248,13 +244,13 @@ const ImageMessage = (props) => {
 
         if (key == "TsfileMetaDataSize") {
             getTsFileMetada()
-            return (<pre>TsfileMetaDataSize:{tsfileMetaDataSize}</pre>);
+            return (<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>TsfileMetaDataSize:{tsfileMetaDataSize}</pre>);
         }
     }
 
     return (
         <div style={{ width: "100%", height: "100%" }}>
-            {showImage(value)}
+            {showImage(value,offset)}
         </div>
     )
 }
@@ -262,6 +258,7 @@ const ImageMessage = (props) => {
 
 const Overview = (props) => {
     const [clickArea, setClickArea] = useState()
+    const [clickAreaOffset,setClickAreaOffset] = useState(undefined)
     const [popShow, setPpoShow] = useState(false)
     const [chunkGroupBrief, setChunkGroupBrief] = useState()
     const [timeseriesIndexBrief, setTimeseriesIndexBrief] = useState()
@@ -271,19 +268,28 @@ const Overview = (props) => {
 
     const { fileName, filePath, baseInfo } = props;
 
-    const doChange = (structureName) => {
+    const doChange = (structureName,offset) => {
         setClickArea(structureName)
+        setClickAreaOffset(offset)
         if (structureName.indexOf("MORE") > -1) {
             setStructureContext();
             setPpoShow({ flag: true, structureName: structureName, fileName: fileName, filePath: filePath })
         }
 
         if (structureName == 'ChunkGroup') {
-            getCGBriefInfo()
+            if(offset != undefined){
+                getCGBriefInfo(offset)
+            }else{
+                setStructureContext();
+            }
         }
 
         if (structureName == 'TimeseriesIndex') {
-            getTIBriefInfo()
+            if(offset != undefined){
+                getTIBriefInfo(offset)
+            }else{
+                setStructureContext();
+            }
         }
 
         if (structureName == 'IndexOfTimeseriesIndex') {
@@ -291,8 +297,8 @@ const Overview = (props) => {
         }
     }
 
-    const getCGBriefInfo = async () => {
-        let res = await getChunkGroupInfoUsingPOST({ offset: 0, filePath: filePath })
+    const getCGBriefInfo = async (offset) => {
+        let res = await getChunkGroupInfoUsingPOST({ offset: offset, filePath: filePath })
         if (res.code == 0) {
             setChunkGroupBrief(res.data)
         } else {
@@ -302,8 +308,8 @@ const Overview = (props) => {
         }
     }
 
-    const getTIBriefInfo = async () => {
-        let res = await getTimeseriesIndexInfoUsingPOST({ offset: 0, filePath: filePath })
+    const getTIBriefInfo = async (offset) => {
+        let res = await getTimeseriesIndexInfoUsingPOST({ offset: offset, filePath: filePath })
         if (res.code == 0) {
             setTimeseriesIndexBrief(res.data)
         } else {
@@ -335,7 +341,7 @@ const Overview = (props) => {
                     + "\t CGD = n * Chunk \n"
                     + "\t ChunkGroup = CGH +CGD \n"
                     + "内容详情: \n"
-                setStructureContext(<pre>{info}{JSON.stringify(chunkGroupBrief.cgh, null, '\t')}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(chunkGroupBrief.cgh, null, '\t')}</pre>)
             }
             if (level2Flag == 'CH') {
                 let info = "结构说明：\n"
@@ -344,7 +350,7 @@ const Overview = (props) => {
                     + "\t CD = n * Page \n"
                     + "\t Chunk = CH +CD \n"
                     + "内容详情: \n"
-                setStructureContext(<pre>{info}{JSON.stringify(chunkGroupBrief.ch, null, '\t')}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(chunkGroupBrief.ch, null, '\t')}</pre>)
             }
             if (level2Flag == 'PH') {
                 let info = "结构说明：\n"
@@ -352,7 +358,7 @@ const Overview = (props) => {
                     + "\t PD = PageData \n"
                     + "\t Page = PH + PD \n"
                     + "内容详情: \n"
-                setStructureContext(<pre>{info}{JSON.stringify(chunkGroupBrief.ph, null, '\t')}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(chunkGroupBrief.ph, null, '\t')}</pre>)
             }
         } else if (level1Flag == 'TimeseriesIndex') {
             if (level2Flag == 'TM') {
@@ -360,34 +366,34 @@ const Overview = (props) => {
                     + "\t TM = TimeseriesMetadata \n"
                     + "\t TimeseriesIndex = TM + n*CM \n"
                     + "内容详情: \n"
-                setStructureContext(<pre>{info}{JSON.stringify(timeseriesIndexBrief.tm, null, '\t')}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(timeseriesIndexBrief.tm, null, '\t')}</pre>)
             }
             if (level2Flag == 'CM') {
                 let info = "结构说明：\n"
                     + "\t CM = ChunkMetadata \n"
                     + "内容详情: \n"
-                setStructureContext(<pre>{info}{JSON.stringify(timeseriesIndexBrief.cm, null, '\t')}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(timeseriesIndexBrief.cm, null, '\t')}</pre>)
             }
         }else if(level1Flag == 'IndexOfTimeseriesIndex'){
             if (level2Flag == 'childSize') {
                 let info = " \n  childSize:"
-                setStructureContext(<pre>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.childSize}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.childSize}</pre>)
             }
             if (level2Flag == 'list') {
                 let info = " \n List<ITI>:"
-                setStructureContext(<pre>{info}{JSON.stringify(indexTimeseriesIndexBrief.metadataIndexNodeVo.metadataIndexEntryList, null, '\t')}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(indexTimeseriesIndexBrief.metadataIndexNodeVo.metadataIndexEntryList, null, '\t')}</pre>)
             }
             if (level2Flag == 'offset') {
                 let info = "\n offset:"
-                setStructureContext(<pre>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.offset}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.offset}</pre>)
             }
             if (level2Flag == 'NodeType') {
                 let info =  "\n NodeType:"
-                setStructureContext(<pre>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.nodeType}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.nodeType}</pre>)
             }
             if (level2Flag == 'metaOffset') {
                 let info = "\n metaOffset:"
-                setStructureContext(<pre>{info}{indexTimeseriesIndexBrief.metaOffset}</pre>)
+                setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metaOffset}</pre>)
             }
         } else {
             setStructureContext()
@@ -406,7 +412,7 @@ const Overview = (props) => {
                 </Sider>
                 <Layout style={{ background: "white", paddingTop: 60, paddingLeft: 15, paddingRight: 15 }}>
                     <Content style={{ height: "33vh", background: "white" }}>
-                        <ImageMessage value={clickArea} showStructureContext={showStructureContext} filePath={filePath}></ImageMessage>
+                        <ImageMessage value={clickArea} offset={clickAreaOffset} showStructureContext={showStructureContext} filePath={filePath}></ImageMessage>
                     </Content>
                     <Content style={{ height: "60vh", background: "white" }}>
                         {structureContext}

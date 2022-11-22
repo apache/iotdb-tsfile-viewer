@@ -82,7 +82,7 @@ public class TsfileViewerService {
         record.setCanRead(child.canRead());
         record.setType(FileType.DIRECTORY);
         record.setStatus(LoadStatus.EXCLUDED);
-        // record.setPath(child.getPath());
+        record.setSameFolder(true);
         fileRecordList.add(record);
       } else {
         if (child.getName().toLowerCase().endsWith(".tsfile")) {
@@ -96,6 +96,7 @@ public class TsfileViewerService {
             record.setStatus(LoadStatus.UNLOAD);
           }
           // record.setPath(child.getPath());
+          record.setSameFolder(true);
           fileRecordList.add(record);
         } else {
           continue;
@@ -115,6 +116,23 @@ public class TsfileViewerService {
                   }
                 })
             .collect(Collectors.toList());
+    return fileRecordList;
+  }
+
+  public List<FileRecord> getLoadedFiles(){
+    List<FileRecord> fileRecordList = tsfileViewerContainer.getContainer().keySet().stream()
+             .map(path->{
+               FileRecord fileRecord = new FileRecord();
+               fileRecord.setName(path.substring(baseDirectoryPath.length()));
+               fileRecord.setStatus(LoadStatus.LOADED);
+               fileRecord.setType(FileType.FILE);
+               fileRecord.setSameFolder(false);
+               return fileRecord;
+             })
+             .collect(Collectors.toList());
+    if(fileRecordList == null){
+      return new ArrayList<>();
+    }
     return fileRecordList;
   }
 
@@ -775,9 +793,17 @@ public class TsfileViewerService {
   public Map<String, Object> getBaseInfo(String path) throws TsfileViewerException {
     String version = getVersion(path).getVersion();
     int metadataSize = getFileMetadataSize(path);
+
+    PageModel pageModel = new PageModel();
+    pageModel.setPageNo(1);
+    pageModel.setPageSize(3);
+    Page<ChunkGroupInfo> pageChunkGroup = getChunkGroupList(path,pageModel,null);
+    Page<TimeseriesIndexVO> pageTimeseriesIndex = getTimeseriesIndexList(path,pageModel,new QueryByTimeseriesIndexReq());
     Map<String, Object> res = new HashMap<>();
     res.put("version", version);
     res.put("metadataSize", metadataSize);
+    res.put("chunkGroupList",pageChunkGroup.getPageItems());
+    res.put("timeseriesIndexList",pageTimeseriesIndex.getPageItems());
     return res;
   }
 
