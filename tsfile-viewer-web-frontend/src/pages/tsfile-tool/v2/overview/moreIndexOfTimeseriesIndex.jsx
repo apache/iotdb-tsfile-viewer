@@ -43,9 +43,11 @@ const MoreIndexOfTimeseriesIndex = (props) => {
     const [endDate, setEndDate] = useState();
     const [deviceNameLike, setDeviceNameLike] = useState()
     const [randomFlag, setRandomFlag] = useState()
-    const [indexTreeHeight,setIndexTreeHeight] = useState()
+    const [indexTreeHeight, setIndexTreeHeight] = useState()
     const { fileName, filePath, cardList, setCardList } = props;
     const intl = useIntl();
+
+    var pageDataCache;
 
     const gridStyle = {
         width: '20%',
@@ -101,33 +103,51 @@ const MoreIndexOfTimeseriesIndex = (props) => {
 
                 }]
                 cols.push(...Object.values(res.data.title).map((titleName, key) => {
-                    if(titleName == 'timestamp'){
+                    if (titleName == 'timestamp') {
                         return {
-                            title: titleName,
+                            title: (
+                                <>
+                                    {titleName}<span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                    <RetweetOutlined
+                                        onClick={() => {
+                                            pageDataCache = Object.values(pageDataCache).map((item)=>{
+                                                if((item[0]+"").indexOf("-") > -1){
+                                                    item[0] = moment(item[0],'YYYY-MM-DD HH:mm:ss.SSS').valueOf()
+                                                } else {
+                                                    item[0] = moment(Number(item[0])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                                }
+                                                return item
+                                            })
+                                            setPageData(pageDataCache)
+                                        }}
+                                    />
+                                </>),
                             dataIndex: titleName,
                             key: titleName,
                             fixed: 'left',
                             width: '250px',
                             render: (text, record, index) => {
-                                return (<>
-                                    <span id={index}>
-                                        {moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')}
-                                    </span> 
-                                    <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
-                                    <RetweetOutlined 
-                                        onClick={(e) => {
-                                            if (document.getElementById(index).innerText.indexOf("-") > -1) {
-                                                document.getElementById(index).innerText = record[key]
-                                            } else {
-                                                document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                                            }
-                                        }} />
-                                </>)
+                                return (
+                                    <>
+                                        <span id={index}>
+                                            {record[key]}
+                                        </span>
+                                        {/* <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                        <RetweetOutlined
+                                            onClick={(e) => {
+                                                if (document.getElementById(index).innerText.indexOf("-") > -1) {
+                                                    document.getElementById(index).innerText = record[key]
+                                                } else {
+                                                    document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                                }
+                                            }} /> */}
+                                    </>
+                                )
 
                                 // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                             }
                         }
-                    }else{
+                    } else {
                         return {
                             title: titleName,
                             dataIndex: titleName,
@@ -141,6 +161,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                 setColumnsLength(cols.length)
                 setColumns(cols)
                 setPageData(res.data.values);
+                pageDataCache = res.data.values;
                 showPage()
             } else {
                 notification.error({
@@ -226,7 +247,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
 
     }
 
-    const onLoadIndexTreeData = async (expanded,node) => {
+    const onLoadIndexTreeData = async (expanded, node) => {
         if (expanded && node.children == undefined) {
             let res = await getIndexOfTimeseriesIndexTreeUsingPOST({ parentOffset: node.position, filePath: filePath })
             if (res.code == 0) {
@@ -277,13 +298,13 @@ const MoreIndexOfTimeseriesIndex = (props) => {
     }
 
     function Node({ node, style, dragHandle, tree }) {
-        if(!node.isOpen && !node.data.isLeaf && node.data.children == undefined && node.isSelected){
-            onLoadIndexTreeData(!node.isOpen,node.data)
+        if (!node.isOpen && !node.data.isLeaf && node.data.children == undefined && node.isSelected) {
+            onLoadIndexTreeData(!node.isOpen, node.data)
         }
         /* This node instance can do many things. See the API reference. */
         return (
-            <div style={{ ...style, overflow: "hidden", width: "155vh", textOverflow: "ellipsis", whiteSpace: "nowrap"}} ref={dragHandle} onClick={() => (showChunk(node.data))}>
-                {node.data.isLeaf ? "" : node.isOpen ? <MinusSquareOutlined onClick={() => (node.toggle())}/> : <PlusSquareOutlined onClick={() => (node.toggle())}/>} <span style={{background:node.isSelected ? "#FFDFD4":"white"}}>{node.data.isLeaf ? <RightOutlined /> : ""}{node.data.name}</span>
+            <div style={{ ...style, overflow: "hidden", width: "155vh", textOverflow: "ellipsis", whiteSpace: "nowrap" }} ref={dragHandle} onClick={() => (showChunk(node.data))}>
+                {node.data.isLeaf ? "" : node.isOpen ? <MinusSquareOutlined onClick={() => (node.toggle())} /> : <PlusSquareOutlined onClick={() => (node.toggle())} />} <span style={{ background: node.isSelected ? "#FFDFD4" : "white" }}>{node.data.isLeaf ? <RightOutlined /> : ""}{node.data.name}</span>
             </div>
         );
     }
@@ -341,7 +362,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
         <div className={styles.sitedrawerrenderincurrentwrapper}>
             <Layout>
                 <Layout>
-                    <Content width="40%" style={{ height: "60vh"}}>
+                    <Content width="40%" style={{ height: "60vh" }}>
                         <PageHeader style={{ background: "white" }}
                             extra={(
                                 <Button.Group>
@@ -351,7 +372,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                                         showTime={{ format: 'HH:mm:ss' }}
                                         onChange={(date) => {
                                             if (date != null) {
-                                                date = date.set({millisecond: 0 })
+                                                date = date.set({ millisecond: 0 })
                                             }
                                             setBeginDate(isNaN(moment(date).valueOf()) ? '' : moment(date).valueOf())
                                         }}
@@ -363,7 +384,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                                         showTime={{ format: 'HH:mm:ss' }}
                                         onChange={(date) => {
                                             if (date != null) {
-                                                date = date.set({millisecond: 0 })
+                                                date = date.set({ millisecond: 0 })
                                             }
                                             setEndDate(isNaN(moment(date).valueOf()) ? '' : moment(date).valueOf())
                                         }}
@@ -384,7 +405,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                             )}
                         >
                         </PageHeader>
-                        <div id = "modal-div" style={{ height: "60vh", background: "white",margin: '4px 0px 0px 0px' }}>
+                        <div id="modal-div" style={{ height: "60vh", background: "white", margin: '4px 0px 0px 0px' }}>
                             <TreeArborist
                                 openByDefault={false}
                                 disableDrag={false}
@@ -448,7 +469,10 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                     onClose={onClosePage}
                     open={openPage}
                 >
-                    <Table columns={columns} dataSource={pageData} scroll={{x:150*columnsLength,y:"80vh"}}
+                    <Table columns={columns} dataSource={pageData} scroll={{ x: 150 * columnsLength, y: "80vh" }}
+                        rowKey={(record) => {
+                            return record[0];
+                        }}
                         pagination={{ defaultPageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
                         bordered />
                 </Drawer>

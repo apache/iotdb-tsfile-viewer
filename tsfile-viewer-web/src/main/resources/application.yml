@@ -46,8 +46,3 @@ swagger:
 tsviewer:
   web:
      baseDirectory: C:\Users\Administrator\Desktop\
-  admin:
-    name: admin
-    id: 1001
-    password: admin
-  login: http://localhost:${server.port}}

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import React, { useState, useEffect } from "react";
-import { Layout, Col, Row, Image, notification } from 'antd';
+import { Layout, Col, Row, Image, notification, Tooltip } from 'antd';
 import styles from '../style.less'
 import { getChunkGroupInfoUsingPOST, getTimeseriesIndexInfoUsingPOST, getVersionUsingPOST, getMetaDataSizeUsingPOST, getMetaDataUsingPOST } from '@/services/swagger1/tsfileViewerController'
 import PopDetails from "./popDetails"
@@ -25,32 +25,62 @@ const { Sider, Content } = Layout;
 
 const Tsfile = (props) => {
 
-    const { fileName,baseInfo } = props;
+    const { fileName, baseInfo } = props;
     const intl = useIntl();
 
-    const doMessageShow = (msg,offset) => {
+    const doMessageShow = (msg, offset) => {
         props.showStructureContext()
-        props.doChange(msg,offset)
+        props.doChange(msg, offset)
+    }
+    const getMessage = (wrap)=>{
+        let message;
+        if(wrap == undefined){
+            message = "";
+        }else{
+            message = wrap.deviceName +"\n[" + wrap.offset + "]";
+        }
+        return (
+            <Tooltip placement="bottom" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
+                {message}
+            </Tooltip>
+        )
+    }
+    const getMessageIndex = (wrap)=>{
+        let message;
+        if(wrap == undefined){
+            message = "";
+        }else{
+            message = wrap.deviceId;
+            if(!wrap.aligned){
+                message = message + "\n"+wrap.measurementId;
+            }
+            message = message +"\n[" + wrap.offset + "]"
+        }
+        return (
+            <Tooltip placement="bottom" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
+                {message}
+            </Tooltip>
+        )
     }
     return (
         <>
             <div className={styles.row}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "50px" }}>
                     <Col span={23} style={{ height: "40px" }}>
-                        <div className={styles.shortStyle} onClick={() => doMessageShow("TSFILE")}><h3 className={styles.hcenter}>TSFILE  VERSION{"["+baseInfo.version+"]"}</h3></div>
+                        <div className={styles.shortStyle} onClick={() => doMessageShow("TSFILE")}><h3 className={styles.hcenter}>TSFILE  VERSION{"[" + baseInfo.version + "]"}</h3></div>
                     </Col>
                 </Row>
             </div>
             <div className={styles.notoplinerow}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "200px", padding: 5 }}>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup",baseInfo.chunkGroupList[0]?baseInfo.chunkGroupList[0].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.chunkGroupList[0] == undefined ? "" : "ChunkGroup\n["+baseInfo.chunkGroupList[0].offset+"]"}</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[0] ? baseInfo.chunkGroupList[0].offset : undefined)}><h3 className={styles.hcenter}>{getMessage(baseInfo.chunkGroupList[0])}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup",baseInfo.chunkGroupList[1]?baseInfo.chunkGroupList[1].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.chunkGroupList[1] == undefined ? "" : "ChunkGroup\n["+baseInfo.chunkGroupList[1].offset+"]"}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.chunkGroupList[1] ? false : true} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[1] ? baseInfo.chunkGroupList[1].offset : undefined)}><h3 className={styles.hcenter}>{getMessage(baseInfo.chunkGroupList[1])}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup",baseInfo.chunkGroupList[2]?baseInfo.chunkGroupList[2].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.chunkGroupList[2] == undefined ? "" : "ChunkGroup\n["+baseInfo.chunkGroupList[2].offset+"]"}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.chunkGroupList[2] ? false : true} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[2] ? baseInfo.chunkGroupList[2].offset : undefined)}><h3 className={styles.hcenter}>{getMessage(baseInfo.chunkGroupList[2])}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
                         <div className={styles.longStyle} onClick={() => doMessageShow("CGMORE")}><h3 className={styles.hcenter}>more infos</h3></div>
@@ -61,13 +91,13 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "200px", padding: 5 }}>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex",baseInfo.timeseriesIndexList[0]?baseInfo.timeseriesIndexList[0].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.timeseriesIndexList[0] == undefined ? "" : "TimeseriesIndex\n["+baseInfo.timeseriesIndexList[0].offset+"]"}</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[0] ? baseInfo.timeseriesIndexList[0].offset : undefined)}><h3 className={styles.hcenter}>{getMessageIndex(baseInfo.timeseriesIndexList[0])}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex",baseInfo.timeseriesIndexList[1]?baseInfo.timeseriesIndexList[1].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.timeseriesIndexList[1] == undefined ? "" : "TimeseriesIndex\n["+baseInfo.timeseriesIndexList[1].offset+"]"}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.timeseriesIndexList[1] ? false : true} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[1] ? baseInfo.timeseriesIndexList[1].offset : undefined)}><h3 className={styles.hcenter}>{getMessageIndex(baseInfo.timeseriesIndexList[1])}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex",baseInfo.timeseriesIndexList[2]?baseInfo.timeseriesIndexList[2].offset:undefined)}><h3 className={styles.hcenter}>{baseInfo.timeseriesIndexList[2] == undefined ? "" : "TimeseriesIndex\n["+baseInfo.timeseriesIndexList[2].offset+"]"}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.timeseriesIndexList[2] ? false : true} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[2] ? baseInfo.timeseriesIndexList[2].offset : undefined)}><h3 className={styles.hcenter}>{getMessageIndex(baseInfo.timeseriesIndexList[2])}</h3></div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
                         <div className={styles.longStyle} onClick={() => doMessageShow("TIMORE")}><h3 className={styles.hcenter}>more infos</h3></div>
@@ -95,7 +125,7 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row align="middle" justify="center" style={{ height: "45px" }}>
                     <Col span={22} style={{ height: "40px" }}>
-                        <div className={styles.shortStyle} onClick={() => doMessageShow("TsfileMetaDataSize")}><h3 className={styles.hcenter}>TsfileMetaDataSize{"["+baseInfo.metadataSize+"]"}</h3></div>
+                        <div className={styles.shortStyle} onClick={() => doMessageShow("TsfileMetaDataSize")}><h3 className={styles.hcenter}>TsfileMetaDataSize{"[" + baseInfo.metadataSize + "]"}</h3></div>
                     </Col>
                 </Row>
             </div>
@@ -137,7 +167,7 @@ const ImageMessage = (props) => {
         }
     }
 
-    const showImage = (key,offset) => {
+    const showImage = (key, offset) => {
         if (key == "TSFILE") {
             getVersion();
             let message = '说明：\n' +
@@ -183,7 +213,7 @@ const ImageMessage = (props) => {
         }
 
         // || key == "TIMORE"
-        if (key == "TimeseriesIndex"  && offset != undefined) {
+        if (key == "TimeseriesIndex" && offset != undefined) {
             return (
                 <div className={styles.detailRow}>
                     <div className={styles.chunkgroup} >
@@ -250,7 +280,7 @@ const ImageMessage = (props) => {
 
     return (
         <div style={{ width: "100%", height: "100%" }}>
-            {showImage(value,offset)}
+            {showImage(value, offset)}
         </div>
     )
 }
@@ -258,7 +288,7 @@ const ImageMessage = (props) => {
 
 const Overview = (props) => {
     const [clickArea, setClickArea] = useState()
-    const [clickAreaOffset,setClickAreaOffset] = useState(undefined)
+    const [clickAreaOffset, setClickAreaOffset] = useState(undefined)
     const [popShow, setPpoShow] = useState(false)
     const [chunkGroupBrief, setChunkGroupBrief] = useState()
     const [timeseriesIndexBrief, setTimeseriesIndexBrief] = useState()
@@ -268,7 +298,7 @@ const Overview = (props) => {
 
     const { fileName, filePath, baseInfo } = props;
 
-    const doChange = (structureName,offset) => {
+    const doChange = (structureName, offset) => {
         setClickArea(structureName)
         setClickAreaOffset(offset)
         if (structureName.indexOf("MORE") > -1) {
@@ -277,17 +307,17 @@ const Overview = (props) => {
         }
 
         if (structureName == 'ChunkGroup') {
-            if(offset != undefined){
+            if (offset != undefined) {
                 getCGBriefInfo(offset)
-            }else{
+            } else {
                 setStructureContext();
             }
         }
 
         if (structureName == 'TimeseriesIndex') {
-            if(offset != undefined){
+            if (offset != undefined) {
                 getTIBriefInfo(offset)
-            }else{
+            } else {
                 setStructureContext();
             }
         }
@@ -320,7 +350,7 @@ const Overview = (props) => {
     }
 
     const getITIBriefInfo = async () => {
-        let res = await getMetaDataUsingPOST({filePath: filePath })
+        let res = await getMetaDataUsingPOST({ filePath: filePath })
         if (res.code == 0) {
             setIndexTimeseriesIndexBrief(res.data)
         } else {
@@ -328,7 +358,7 @@ const Overview = (props) => {
                 message: res.message,
             });
         }
-        
+
     }
 
     // flag1 代表chunkgroup、timeseriesIndex、等,flag2代表flag1下的二级标志
@@ -374,7 +404,7 @@ const Overview = (props) => {
                     + "内容详情: \n"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(timeseriesIndexBrief.cm, null, '\t')}</pre>)
             }
-        }else if(level1Flag == 'IndexOfTimeseriesIndex'){
+        } else if (level1Flag == 'IndexOfTimeseriesIndex') {
             if (level2Flag == 'childSize') {
                 let info = " \n  childSize:"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.childSize}</pre>)
@@ -388,7 +418,7 @@ const Overview = (props) => {
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.offset}</pre>)
             }
             if (level2Flag == 'NodeType') {
-                let info =  "\n NodeType:"
+                let info = "\n NodeType:"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{indexTimeseriesIndexBrief.metadataIndexNodeVo.nodeType}</pre>)
             }
             if (level2Flag == 'metaOffset') {

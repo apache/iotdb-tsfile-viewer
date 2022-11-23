@@ -16,7 +16,7 @@
  */
 import { PageLoading } from '@ant-design/pro-layout';
 import { message } from 'antd';
-import { history } from 'umi';
+import { history,SelectLang } from 'umi';
 import Footer from '@/components/Footer';
 import { forwardRef } from 'react';
 const fowardPath = '/tsfile-tool/v2/';
@@ -79,7 +79,7 @@ export const request = {
 
 export const layout = ({ initialState }) => {
   return {
-    rightContentRender: () => <div></div>,
+    rightContentRender: () => <SelectLang />,
     disableContentMargin: false,
     footerRender: () => <Footer />,
     onPageChange: () => {

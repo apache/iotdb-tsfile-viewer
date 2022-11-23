@@ -51,6 +51,8 @@ const MoreTimeseriesIndex = (props) => {
     const { fileName, filePath, cardList, setCardList } = props;
     const intl = useIntl();
 
+    var pageDataCache;
+
     const gridStyle = {
         width: '100%',
         background: "#f2f2f2",
@@ -172,33 +174,51 @@ const MoreTimeseriesIndex = (props) => {
                     }
                 }]
                 cols.push(...Object.values(res.data.title).map((titleName, key) => {
-                    if(titleName == 'timestamp'){
+                    if (titleName == 'timestamp') {
                         return {
-                            title: titleName,
+                            title: (
+                                <>
+                                    {titleName}<span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                    <RetweetOutlined
+                                        onClick={() => {
+                                            pageDataCache = Object.values(pageDataCache).map((item)=>{
+                                                if((item[0]+"").indexOf("-") > -1){
+                                                    item[0] = moment(item[0],'YYYY-MM-DD HH:mm:ss.SSS').valueOf()
+                                                } else {
+                                                    item[0] = moment(Number(item[0])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                                }
+                                                return item
+                                            })
+                                            setPageData(pageDataCache)
+                                        }}
+                                    />
+                                </>),
                             dataIndex: titleName,
                             key: titleName,
                             fixed: 'left',
                             width: '250px',
                             render: (text, record, index) => {
-                                return (<>
-                                    <span id={index}>
-                                        {moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')}
-                                    </span> 
-                                    <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
-                                    <RetweetOutlined 
-                                        onClick={(e) => {
-                                            if (document.getElementById(index).innerText.indexOf("-") > -1) {
-                                                document.getElementById(index).innerText = record[key]
-                                            } else {
-                                                document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                                            }
-                                        }} />
-                                </>)
+                                return (
+                                    <>
+                                        <span id={index}>
+                                            {record[key]}
+                                        </span>
+                                        {/* <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                        <RetweetOutlined
+                                            onClick={(e) => {
+                                                if (document.getElementById(index).innerText.indexOf("-") > -1) {
+                                                    document.getElementById(index).innerText = record[key]
+                                                } else {
+                                                    document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                                }
+                                            }} /> */}
+                                    </>
+                                )
 
                                 // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                             }
                         }
-                    }else{
+                    } else {
                         return {
                             title: titleName,
                             dataIndex: titleName,
@@ -212,6 +232,7 @@ const MoreTimeseriesIndex = (props) => {
                 setColumnsLength(cols.length)
                 setColumns(cols)
                 setPageData(res.data.values);
+                pageDataCache = res.data.values;
                 showPage()
             } else {
                 notification.error({
@@ -408,6 +429,9 @@ const MoreTimeseriesIndex = (props) => {
                     open={openPage}
                 >
                     <Table columns={columns} dataSource={pageData} scroll={{ x: 180 * columnsLength, y: "80vh" }}
+                        rowKey={(record) => {
+                            return record[0];
+                        }}
                         pagination={{ defaultPageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
                         bordered />
                 </Drawer>
