@@ -40,7 +40,7 @@ const Tsfile = (props) => {
             message = wrap.deviceName +"\n[" + wrap.offset + "]";
         }
         return (
-            <Tooltip placement="bottom" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
+            <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
                 {message}
             </Tooltip>
         )
@@ -57,7 +57,7 @@ const Tsfile = (props) => {
             message = message +"\n[" + wrap.offset + "]"
         }
         return (
-            <Tooltip placement="bottom" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
+            <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
                 {message}
             </Tooltip>
         )
