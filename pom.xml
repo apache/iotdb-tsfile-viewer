@@ -119,6 +119,10 @@
                             <exclude>**/*.json</exclude>
                             <exclude>**/yarn.lock</exclude>
                             <exclude>**/node/**</exclude>
+                            <exclude>tsfile-viewer-web-frontend/yarn.lock</exclude>
+                            <exclude>tsfile-viewer-web-frontend/node_modules/**</exclude>
+                            <exclude>tsfile-viewer-web-frontend/src/.umi-production/**</exclude>
+                            <exclude>tsfile-viewer-web-frontend/src/.umi/**</exclude>
                             <exclude>**/resources/static/**</exclude>
                         </excludes>
                     </configuration>
