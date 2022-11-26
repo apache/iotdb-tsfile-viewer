@@ -17,6 +17,20 @@
 # under the License.
 #
 
-notifications:
-  issues:       reviews@iotdb.apache.org
-  pullrequests: reviews@iotdb.apache.org
+github:
+  description: "Apache IoTDB TsFile Viewer"
+  homepage: https://iotdb.apache.org/
+  labels:
+    - timeseries
+    - tsfile
+    - java
+  features:
+    wiki: true
+    issues: true
+  enabled_merge_buttons:
+    # enable squash button:
+    squash:  true
+    # enable merge button:
+    merge:   false
+    # disable rebase button:
+    rebase:  true
