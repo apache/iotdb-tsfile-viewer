@@ -27,7 +27,7 @@
 - [Quick Start](#quick-start)
     - [Prerequisites](#Prerequisites)
     - [Compile](#Compile)
-- [User Guide](#User Guide)
+- [User Guide](#user-guide)
 - [Maintainers](#Maintainers)
 - [Contributing](#Contributing)
 - [Contributors](#Contributors)
@@ -102,7 +102,49 @@ tsviewer:
 # User Guide
 
 When you visit http://locallhost:8080, you will get the following page.  
-![image](/imgs/entry.png)
+![image](/imgs/entry.png)  
+- 1 you can get some tips when your mouse over this icon
+- 2 multilingual switching
+- 3 file management,when you click this button, you will get the following page.  
+
+![image](/imgs/file-management.png)
+- 1 click to change the directory
+- 2 the status of the files
+- 3 get the loaded files
+- 4 the operation, open a tsfile, when the file loaded success, you will get the following page.  
+
+![image](/imgs/overview-tsfile.png)
+- 1 ChunkGroups
+- 2 TimeseriesIndexs
+- 3 IndexOfTimeseriesIndexs  
+
+The white blocks are clickable, when you click on them, their corresponding simple information will be displayed on the right.  
+You can get more infos by click the 'more info' block.  
+
+![image](/imgs/chunkgroup.png)  
+
+- 1 the ChunkGroups,the name is the device name
+- 2 the brief info of a ChunkGroup
+- 3 click here to get the Chunks info of a ChunkGroup
+![image](/imgs/chunkinfo.png)  
+
+Click the page node to get pageData.  
+
+![image](/imgs/pagedata.png)
+
+The TimeseriesIndexs is used similarly to ChunkGroups  
+
+![image](/imgs/timeseriesindex.png)
+
+Display the index structure in the form of a tree  
+
+![image](/imgs/indexoftimeseriesindex.png)
+
+![image](/imgs/indexoftimeseriesindex-chunk.png)
+
+Data Search function:  
+![image](/imgs/datasearch.png) 
+
 
 # Maintainers
 
