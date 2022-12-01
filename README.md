@@ -27,6 +27,7 @@
 - [Quick Start](#quick-start)
     - [Prerequisites](#Prerequisites)
     - [Compile](#Compile)
+- [User Guide](#User Guide)
 - [Maintainers](#Maintainers)
 - [Contributing](#Contributing)
 - [Contributors](#Contributors)
@@ -89,6 +90,20 @@ You can modify the port through the file
 iotdb-tsfile-viewer\tsfile-viewer-web-frontend\config\config.js
 tsfile-viewer-web\src\main\resources\application.yml
 ```
+You can specify the parent folder location for tsfiles
+```
+tsfile-viewer-web\src\main\resources\application.yml
+
+tsviewer:
+  web:
+     baseDirectory: C:\Users\Administrator\Desktop\
+```
+
+# User Guide
+
+When you visit http://locallhost:8080, you will get the following page.  
+![image](/imgs/entry.png)
+
 # Maintainers
 
 # Contributing

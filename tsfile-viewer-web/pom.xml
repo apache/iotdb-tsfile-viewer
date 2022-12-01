@@ -149,56 +149,9 @@
 			<artifactId>iotdb-tsfile-viewer-core</artifactId>
 			<version>0.13.2-SNAPSHOT</version>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.apache.iotdb</groupId>-->
-<!--			<artifactId>iotdb-tsfile-viewer-web-frontend</artifactId>-->
-<!--			<version>${version}</version>-->
-<!--		</dependency>-->
 
 	</dependencies>
 	<build>
-		<resources>
-			<resource>
-				<directory>${project.basedir}/src/main/resources</directory>
-				<filtering>true</filtering>
-				<includes>
-					<include>**/*.json</include>
-					<include>**/*.properties</include>
-					<include>**/*.sql</include>
-					<include>**/*.vm</include>
-					<include>**/*.xml</include>
-					<include>**/*.yml</include>
-					<include>**/*.html</include>
-					<include>**/*.ini</include>
-					<include>**/*.js</include>
-					<include>**/*.css</include>
-					<include>**/*.factories</include>
-					<include>**/*.db</include>
-					<include>**/*.png</include>
-				</includes>
-			</resource>
-		</resources>
-		<testResources>
-			<testResource>
-				<directory>${project.basedir}/src/test/resources</directory>
-				<filtering>true</filtering>
-				<includes>
-					<include>**/*.json</include>
-					<include>**/*.properties</include>
-					<include>**/*.sql</include>
-					<include>**/*.vm</include>
-					<include>**/*.xml</include>
-					<include>**/*.yml</include>
-					<include>**/*.html</include>
-					<include>**/*.ini</include>
-					<include>**/*.js</include>
-					<include>**/*.css</include>
-					<include>**/*.factories</include>
-					<include>**/*.db</include>
-					<include>**/*.png</include>
-				</includes>
-			</testResource>
-		</testResources>
 		<finalName>${artifactId}-${version}</finalName>
 		<plugins>
 			<plugin>
@@ -216,7 +169,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<!-- 插件maven-clean-plugin，用于在编译前，清除之前编译的文件、文件夹等，避免残留之前的内容 -->
 				<groupId>org.apache.maven.plugins</groupId>
@@ -235,6 +187,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>2.6</version>
+				<configuration>
+					<encoding>${maven.compiler.encoding}</encoding>
+				</configuration>
 				<executions>
 					<execution>
 						<id>copy static</id>
@@ -266,79 +221,16 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.codehaus.gmavenplus</groupId>
-				<artifactId>gmavenplus-plugin</artifactId>
-				<version>1.7.1</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>addSources</goal>
-							<goal>addTestSources</goal>
-							<goal>generateStubs</goal>
-							<goal>compile</goal>
-							<goal>generateTestStubs</goal>
-							<goal>compileTests</goal>
-							<goal>removeStubs</goal>
-							<goal>removeTestStubs</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.6.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
+					<encoding>${maven.compiler.encoding}</encoding>
 				</configuration>
 			</plugin>
 		</plugins>
-		<pluginManagement>
-			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.codehaus.gmavenplus
-										</groupId>
-										<artifactId>
-											gmavenplus-plugin
-										</artifactId>
-										<versionRange>
-											[1.7.1,)
-										</versionRange>
-										<goals>
-											<goal>addSources</goal>
-											<goal>
-												generateTestStubs
-											</goal>
-											<goal>addTestSources</goal>
-											<goal>compile</goal>
-											<goal>removeTestStubs</goal>
-											<goal>compileTests</goal>
-											<goal>removeStubs</goal>
-											<goal>generateStubs</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
 	<packaging>jar</packaging>
 </project>
