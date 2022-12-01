@@ -76,9 +76,10 @@ Under the root path of iotdb-tsfile-viewer:
 mvn clean install
 ```
 then you can start this tool in the tsfile-viewer-web project 
-
+you can add '-Dfile.endoding=utf8' command to avoid some Chinese garbled problems,mainly to solve the situation that some device names in the tsfile file contain Chinese
 ```
 java -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
+java -Dfile.endoding=utf8 -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
 ```
 
 The default url is
