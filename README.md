@@ -82,6 +82,10 @@ java -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
 java -Dfile.endoding=utf8 -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
 ```
 
+you can also specify a configuration file through the '--spring.config.path=application.yml' command  
+```
+java -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar --spring.config.path=application.yml
+```
 The default url is
 ```
 http://localhost:8080/
