@@ -34,31 +34,38 @@ const Tsfile = (props) => {
     }
     const getMessage = (wrap)=>{
         let message;
+        let messageShow;
         if(wrap == undefined){
             message = "";
+            messageShow = "";
         }else{
-            message = wrap.deviceName +"\n[" + wrap.offset + "]";
+            message = <div className={styles.hcenter}>{wrap.deviceName }<br/>{"[" + wrap.offset + "]"}</div>;
+            messageShow = wrap.deviceName +"\n[" + wrap.offset + "]";
         }
         return (
-            <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
-                {message}
+            <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{messageShow}</span>}>
+                <h3 className={styles.hcenter}>{message}</h3>
             </Tooltip>
         )
     }
     const getMessageIndex = (wrap)=>{
         let message;
+        let messageShow;
         if(wrap == undefined){
             message = "";
+            messageShow = "";
         }else{
-            message = wrap.deviceId;
             if(!wrap.aligned){
-                message = message + "\n"+wrap.measurementId;
+                message = <div className={styles.hcenter}>{wrap.deviceId }<br/>{"[" + wrap.measurementId + "]"}<br/>{"[" + wrap.offset + "]"}</div>;
+                messageShow = wrap.deviceId +"\n[" + wrap.measurementId + "]\n[" + wrap.offset + "]";
+            }else{
+                message = <div className={styles.hcenter}>{wrap.deviceId }<br/>{"[" + wrap.offset + "]"}</div>;
+                messageShow = wrap.deviceId +"\n[" + wrap.offset + "]";
             }
-            message = message +"\n[" + wrap.offset + "]"
         }
         return (
             <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
-                {message}
+                <h3 className={styles.hcenter}>{message}</h3>
             </Tooltip>
         )
     }
@@ -74,13 +81,13 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "200px", padding: 5 }}>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[0] ? baseInfo.chunkGroupList[0].offset : undefined)}><h3 className={styles.hcenter}>{getMessage(baseInfo.chunkGroupList[0])}</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[0] ? baseInfo.chunkGroupList[0].offset : undefined)}>{getMessage(baseInfo.chunkGroupList[0])}</div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} hidden={baseInfo.chunkGroupList[1] ? false : true} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[1] ? baseInfo.chunkGroupList[1].offset : undefined)}><h3 className={styles.hcenter}>{getMessage(baseInfo.chunkGroupList[1])}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.chunkGroupList[1] ? false : true} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[1] ? baseInfo.chunkGroupList[1].offset : undefined)}>{getMessage(baseInfo.chunkGroupList[1])}</div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} hidden={baseInfo.chunkGroupList[2] ? false : true} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[2] ? baseInfo.chunkGroupList[2].offset : undefined)}><h3 className={styles.hcenter}>{getMessage(baseInfo.chunkGroupList[2])}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.chunkGroupList[2] ? false : true} onClick={() => doMessageShow("ChunkGroup", baseInfo.chunkGroupList[2] ? baseInfo.chunkGroupList[2].offset : undefined)}>{getMessage(baseInfo.chunkGroupList[2])}</div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
                         <div className={styles.longStyle} onClick={() => doMessageShow("CGMORE")}><h3 className={styles.hcenter}>more infos</h3></div>
@@ -91,13 +98,13 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row gutter={[8, 8]} align="middle" justify="center" style={{ height: "200px", padding: 5 }}>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[0] ? baseInfo.timeseriesIndexList[0].offset : undefined)}><h3 className={styles.hcenter}>{getMessageIndex(baseInfo.timeseriesIndexList[0])}</h3></div>
+                        <div className={styles.longStyle} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[0] ? baseInfo.timeseriesIndexList[0].offset : undefined)}>{getMessageIndex(baseInfo.timeseriesIndexList[0])}</div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} hidden={baseInfo.timeseriesIndexList[1] ? false : true} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[1] ? baseInfo.timeseriesIndexList[1].offset : undefined)}><h3 className={styles.hcenter}>{getMessageIndex(baseInfo.timeseriesIndexList[1])}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.timeseriesIndexList[1] ? false : true} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[1] ? baseInfo.timeseriesIndexList[1].offset : undefined)}>{getMessageIndex(baseInfo.timeseriesIndexList[1])}</div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
-                        <div className={styles.longStyle} hidden={baseInfo.timeseriesIndexList[2] ? false : true} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[2] ? baseInfo.timeseriesIndexList[2].offset : undefined)}><h3 className={styles.hcenter}>{getMessageIndex(baseInfo.timeseriesIndexList[2])}</h3></div>
+                        <div className={styles.longStyle} hidden={baseInfo.timeseriesIndexList[2] ? false : true} onClick={() => doMessageShow("TimeseriesIndex", baseInfo.timeseriesIndexList[2] ? baseInfo.timeseriesIndexList[2].offset : undefined)}>{getMessageIndex(baseInfo.timeseriesIndexList[2])}</div>
                     </Col>
                     <Col span={6} style={{ height: "160px" }}>
                         <div className={styles.longStyle} onClick={() => doMessageShow("TIMORE")}><h3 className={styles.hcenter}>more infos</h3></div>

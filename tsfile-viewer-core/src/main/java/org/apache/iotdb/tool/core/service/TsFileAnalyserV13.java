@@ -1139,14 +1139,17 @@ public class TsFileAnalyserV13 {
                   .map(chunkOffsetInfo -> chunkOffsetInfo.getMeasurementId())
                   .collect(Collectors.toList()));
       tableInfo.getTitle().set(0, "timestamp");
-      // 查找当前page在timeChunk中的位置
-      List<PageOffsetInfo> pageOffsetListInTimeChunk =
-          fetchPageOffsetListByChunkOffset(chunkOffsetInfoList.get(0).getOffset());
       int positionInTimmeChunkPages = 0;
-      for (int i = 0; i < pageOffsetListInTimeChunk.size(); i++) {
-        if (pageOffsetInfo.getOffset() == pageOffsetListInTimeChunk.get(i).getOffset()) {
-          positionInTimmeChunkPages = i;
-          break;
+      // hasStatistics，对应的是chunk中的信息 false 代表是单页的chunk，
+      if (pageOffsetInfo.isHasStatistics()) {
+        // 查找当前page在timeChunk中的位置
+        List<PageOffsetInfo> pageOffsetListInTimeChunk =
+            fetchPageOffsetListByChunkOffset(chunkOffsetInfoList.get(0).getOffset());
+        for (int i = 0; i < pageOffsetListInTimeChunk.size(); i++) {
+          if (pageOffsetInfo.getOffset() == pageOffsetListInTimeChunk.get(i).getOffset()) {
+            positionInTimmeChunkPages = i;
+            break;
+          }
         }
       }
 

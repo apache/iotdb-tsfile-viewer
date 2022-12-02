@@ -30,15 +30,13 @@
     <artifactId>iotdb-tsfile-viewer-core</artifactId>
     <name>tsfile-viewer-core</name>
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
         <junit.version>4.13.2</junit.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.iotdb</groupId>
             <artifactId>tsfile</artifactId>
-            <version>${project.version}</version>
+            <version>0.13.2</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
