@@ -21,6 +21,7 @@ package org.apache.iotdb.ui.config;
 import org.apache.iotdb.tool.core.service.TsFileAnalyserV13;
 import org.apache.iotdb.ui.exception.TsfileViewerException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,7 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Configuration
 public class TsfileViewerContainer {
 
-  private Map<String, TsFileAnalyserV13> container = new ConcurrentHashMap(5);
+  @Value("${tsviewer.web.containerSize}")
+  private int containerSize;
+
+  private Map<String, TsFileAnalyserV13> container = new ConcurrentHashMap(containerSize);
 
   /**
    * 向容器中添加 parser
@@ -46,7 +50,7 @@ public class TsfileViewerContainer {
   public void addTsfileParser(String key, TsFileAnalyserV13 tsFileAnalyserV13)
       throws TsfileViewerException {
     synchronized (container) {
-      if (container.size() == 5) {
+      if (container.size() == containerSize) {
         throw new TsfileViewerException(TsfileViewerException.CONTAINER_SIZE_REACHED_MAXIMUM, "");
       }
     }
@@ -91,7 +95,7 @@ public class TsfileViewerContainer {
    * @return
    */
   public boolean hasReachedMaximum() {
-    if (container.size() >= 5) {
+    if (container.size() >= containerSize) {
       return true;
     }
     return false;

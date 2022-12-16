@@ -82,6 +82,7 @@ const FileSelect = (props) => {
             filters: [
                 { text: intl.formatMessage({ id: 'tsviewer.fileSelect.loaded', }), value: "LOADED" },
             ],
+            filteredValue: tableFilters == undefined ? null : tableFilters.status || null,
             render(text, record, index) {
                 if (record.status == 'EXCLUDED') {
                     return
@@ -155,6 +156,7 @@ const FileSelect = (props) => {
             setBreadData(arr.map((item, key) => {
                 return <><div style={{ cursor: "pointer", background: "#f7e0e0" }}><Breadcrumb.Item key={key} onClick={() => { openDrictory(generateBreadArray(arr, key)) }}>{item}</Breadcrumb.Item></div><Breadcrumb.Separator>{'>'}</Breadcrumb.Separator></>;
             }))
+            setTableFilters();
         } else {
             notification.error({
                 message: res.message,
@@ -275,6 +277,7 @@ const FileSelect = (props) => {
     }
 
     const handelTableChanged = async (pagenation, filters) => {
+        console.log(filters)
         setTableFilters(filters)
         setIsSameFolder(false)
     }

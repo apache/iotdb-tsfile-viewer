@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 export default {
-  'menu.platform.file-preview': 'File Preview',
+  'menu.tsfile-tool': 'Tsfile viewer',
   'menu.exception.403': '403',
   'menu.exception.404': '404',
   'menu.exception.500': '500',
