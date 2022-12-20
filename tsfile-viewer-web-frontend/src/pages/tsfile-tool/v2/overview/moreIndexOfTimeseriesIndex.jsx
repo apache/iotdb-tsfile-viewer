@@ -45,6 +45,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
     const [randomFlag, setRandomFlag] = useState()
     const [indexTreeHeight, setIndexTreeHeight] = useState()
     const { fileName, filePath, cardList, setCardList } = props;
+    const [treeHeight, setTreeHeight] = useState()
     const intl = useIntl();
 
     var pageDataCache;
@@ -64,16 +65,21 @@ const MoreIndexOfTimeseriesIndex = (props) => {
         }
         let res = await getChunkListUsingPOST({ offset: node.position, filePath: filePath, offsetType: 'TS_INDEX', beginDate: beginDate, endDate: endDate })
         if (res.code == 0) {
-            setChunkTreeData(Object.values(res.data).map((chunkInfo) => {
+            setRandomFlag(moment(new Date()).valueOf())
+            let tree = Object.values(res.data).map((node) => {
                 let tree = {};
-                tree['title'] = chunkInfo.measurementId;
-                tree['key'] = chunkInfo.offset;
-                tree['icon'] = <GroupOutlined />
-                tree['timeseriesIndexOffset'] = node.position;
+                tree['name'] = node.measurementId;
+                tree['id'] = node.measurementId + '-' + node.offset + randomFlag;
+                // tree['icon'] = <RightOutlined />
                 tree['isLeaf'] = false;
+                tree['position'] = node.offset;
+                tree['timeseriesIndexOffset'] = node.position;
                 return tree;
-            }))
+            })
+            setChunkTreeData(tree)
             setopenChunk(true);
+            var div = document.getElementById('tree-div');
+            setTreeHeight(div.offsetHeight)
         } else {
             notification.error({
                 message: res.message,
@@ -81,93 +87,83 @@ const MoreIndexOfTimeseriesIndex = (props) => {
         }
     };
 
-    const onChunkSelect = async (selectedKeys, info) => {
-        if (info.node.isLeaf == true) {
-            let param = info.node.pageInfo;
-            param['timeseriesIndexOffset'] = info.node.timeseriesIndexOffset;
-            param['chunkOffset'] = info.node.chunkOffset;
-            param['filePath'] = filePath;
-            param['beginDate'] = beginDate;
-            param['endDate'] = endDate;
-            let res = await getPageInfoThroughTimeseriesIndexOffsetUsingPOST(param)
-            if (res.code == 0) {
-                //pagedata信息
-                let cols = [{
-                    title: 'No',
-                    fixed: 'left',
-                    width: '100px',
-                    // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
-                    render: (text, record, index) => {
-                        return index + 1
-                    }
+    const onChunkSelect = async (info) => {
+        if (!info.isLeaf) {
+            return
+        }
+        let param = info.pageInfo;
+        param['timeseriesIndexOffset'] = info.timeseriesIndexOffset;
+        param['chunkOffset'] = info.chunkOffset;
+        param['filePath'] = filePath;
+        param['beginDate'] = beginDate;
+        param['endDate'] = endDate;
+        let res = await getPageInfoThroughTimeseriesIndexOffsetUsingPOST(param)
+        if (res.code == 0) {
+            //pagedata信息
+            let cols = [{
+                title: 'No',
+                fixed: 'left',
+                width: '100px',
+                // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
+                render: (text, record, index) => {
+                    return index + 1
+                }
 
-                }]
-                cols.push(...Object.values(res.data.title).map((titleName, key) => {
-                    if (titleName == 'timestamp') {
-                        return {
-                            title: (
+            }]
+            cols.push(...Object.values(res.data.title).map((titleName, key) => {
+                if (titleName == 'timestamp') {
+                    return {
+                        title: (
+                            <>
+                                {titleName}<span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                <RetweetOutlined
+                                    onClick={() => {
+                                        pageDataCache = Object.values(pageDataCache).map((item) => {
+                                            if ((item[0] + "").indexOf("-") > -1) {
+                                                item[0] = moment(item[0], 'YYYY-MM-DD HH:mm:ss.SSS').valueOf()
+                                            } else {
+                                                item[0] = moment(Number(item[0])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                            }
+                                            return item
+                                        })
+                                        setPageData(pageDataCache)
+                                    }}
+                                />
+                            </>),
+                        dataIndex: titleName,
+                        key: titleName,
+                        fixed: 'left',
+                        width: '250px',
+                        render: (text, record, index) => {
+                            return (
                                 <>
-                                    {titleName}<span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
-                                    <RetweetOutlined
-                                        onClick={() => {
-                                            pageDataCache = Object.values(pageDataCache).map((item)=>{
-                                                if((item[0]+"").indexOf("-") > -1){
-                                                    item[0] = moment(item[0],'YYYY-MM-DD HH:mm:ss.SSS').valueOf()
-                                                } else {
-                                                    item[0] = moment(Number(item[0])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                                                }
-                                                return item
-                                            })
-                                            setPageData(pageDataCache)
-                                        }}
-                                    />
-                                </>),
-                            dataIndex: titleName,
-                            key: titleName,
-                            fixed: 'left',
-                            width: '250px',
-                            render: (text, record, index) => {
-                                return (
-                                    <>
-                                        <span id={index}>
-                                            {record[key]}
-                                        </span>
-                                        {/* <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
-                                        <RetweetOutlined
-                                            onClick={(e) => {
-                                                if (document.getElementById(index).innerText.indexOf("-") > -1) {
-                                                    document.getElementById(index).innerText = record[key]
-                                                } else {
-                                                    document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                                                }
-                                            }} /> */}
-                                    </>
-                                )
-
-                                // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                            }
-                        }
-                    } else {
-                        return {
-                            title: titleName,
-                            dataIndex: titleName,
-                            key: titleName,
-                            render: (text, record, index) => {
-                                return record[key]
-                            }
+                                    <span id={index}>
+                                        {record[key]}
+                                    </span>
+                                </>
+                            )
                         }
                     }
-                }))
-                setColumnsLength(cols.length)
-                setColumns(cols)
-                setPageData(res.data.values);
-                pageDataCache = res.data.values;
-                showPage()
-            } else {
-                notification.error({
-                    message: res.message,
-                });
-            }
+                } else {
+                    return {
+                        title: titleName,
+                        dataIndex: titleName,
+                        key: titleName,
+                        render: (text, record, index) => {
+                            return record[key]
+                        }
+                    }
+                }
+            }))
+            setColumnsLength(cols.length)
+            setColumns(cols)
+            setPageData(res.data.values);
+            pageDataCache = res.data.values;
+            showPage()
+        } else {
+            notification.error({
+                message: res.message,
+            });
         }
     };
 
@@ -183,7 +179,7 @@ const MoreIndexOfTimeseriesIndex = (props) => {
         setopenPage(false);
     };
 
-    const updateIndexTreeData = (list, id, children) => {
+    const updateTreeData = (list, id, children) => {
         return list.map((node) => {
             if (node.id === id) {
                 return {
@@ -195,56 +191,37 @@ const MoreIndexOfTimeseriesIndex = (props) => {
             if (node.children) {
                 return {
                     ...node,
-                    children: updateIndexTreeData(node.children, id, children),
+                    children: updateTreeData(node.children, id, children),
                 };
             }
             return node;
         });
     }
 
-    const updateTreeData = (list, key, children) => {
-        return list.map((node) => {
-            if (node.key === key) {
-                return {
-                    ...node,
-                    children,
-                };
+    const onLoadTreeData = async (expanded, node) => {
+        if (expanded && node.children == undefined) {
+            let res = await getPageListUsingPOST({ offset: node.position, filePath: filePath, beginDate: beginDateCache, endDate: endDateCache })
+            if (res.code == 0) {
+                let newTree = Object.values(res.data).map((child) => {
+                    let tree = {};
+                    tree['name'] = child.pageNo;
+                    tree['id'] = child.pageNo + '-' + child.offset + randomFlag;
+                    tree['isLeaf'] = true;
+                    tree['position'] = child.offset;
+                    tree['chunkOffset'] = node.position;
+                    tree['timeseriesIndexOffset'] = node.timeseriesIndexOffset;
+                    tree['pageInfo'] = child;
+                    return tree;
+                })
+                let data = chunkTreeData;
+                let pa = updateTreeData(data, node.id, newTree);
+                setChunkTreeData(pa)
+            } else {
+                notification.error({
+                    message: res.message,
+                });
             }
-            //这个应该是用来加载子节点的子节点的，应该需要修改children对象
-            if (node.children) {
-                return {
-                    ...node,
-                    children: updateTreeData(node.children, key, children),
-                };
-            }
-            return node;
-        });
-    }
-
-
-    const onLoadChunkTreeData = async ({ key, children, timeseriesIndexOffset }) => {
-        let res = await getPageListUsingPOST({ offset: key, filePath: filePath, beginDate: beginDateCache, endDate: endDateCache })
-        if (res.code == 0) {
-            let pages = Object.values(res.data).map((pageInfo) => {
-                let tree = {};
-                tree['title'] = pageInfo.pageNo;
-                tree['key'] = pageInfo.offset;
-                tree['icon'] = <CopyOutlined />
-                tree['isLeaf'] = true;
-                tree['chunkOffset'] = key;
-                tree['pageInfo'] = pageInfo;
-                tree['timeseriesIndexOffset'] = timeseriesIndexOffset
-                return tree;
-            })
-            setChunkTreeData(origin =>
-                updateTreeData(origin, key, pages),
-            );
-        } else {
-            notification.error({
-                message: res.message,
-            });
         }
-
     }
 
     const onLoadIndexTreeData = async (expanded, node) => {
@@ -260,13 +237,8 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                     tree['position'] = child.position;
                     return tree;
                 })
-                // not work
-                // setIndexTreeData(origin =>
-                //     updateTreeData(origin, node.id, newTree),
-                // );
                 let data = indexTreeData;
-                let pa = updateIndexTreeData(data, node.id, newTree);
-                console.log(pa)
+                let pa = updateTreeData(data, node.id, newTree);
                 setIndexTreeData(pa)
             } else {
                 notification.error({
@@ -304,7 +276,19 @@ const MoreIndexOfTimeseriesIndex = (props) => {
         /* This node instance can do many things. See the API reference. */
         return (
             <div style={{ ...style, overflow: "hidden", width: "155vh", textOverflow: "ellipsis", whiteSpace: "nowrap" }} ref={dragHandle} onClick={() => (showChunk(node.data))}>
-                {node.data.isLeaf ? "" : node.isOpen ? <MinusSquareOutlined onClick={() => (node.toggle())} /> : <PlusSquareOutlined onClick={() => (node.toggle())} />} <span style={{ background: node.isSelected ? "#FFDFD4" : "white" }}>{node.data.isLeaf ? <RightOutlined /> : ""}{node.data.name}</span>
+                {node.data.isLeaf ? "" : node.isOpen ? <MinusSquareOutlined onClick={() => (node.toggle())} /> : <PlusSquareOutlined onClick={() => (node.toggle())} />} <span style={{ background: node.isSelected && node.data.isLeaf ? "#FFDFD4" : "white" }}>{node.data.isLeaf ? <RightOutlined /> : ""}{node.data.name}</span>
+            </div>
+        );
+    }
+
+    function Node1({ node, style, dragHandle, tree }) {
+        if (!node.isOpen && !node.data.isLeaf && node.data.children == undefined && node.isSelected) {
+            onLoadTreeData(!node.isOpen, node.data)
+        }
+        /* This node instance can do many things. See the API reference. */
+        return (
+            <div style={{ ...style, overflow: "hidden", width: "155vh", textOverflow: "ellipsis", whiteSpace: "nowrap" }} ref={dragHandle} onClick={() => (onChunkSelect(node.data))}>
+                {node.data.isLeaf ? "" : node.isOpen ? <MinusSquareOutlined onClick={() => (node.toggle())} /> : <PlusSquareOutlined onClick={() => (node.toggle())} />} <span style={{ background: node.isSelected && node.data.isLeaf ? "#FFDFD4" : "white" }}>{node.data.isLeaf ? <CopyOutlined /> : <GroupOutlined />}{node.data.name}</span>
             </div>
         );
     }
@@ -440,16 +424,18 @@ const MoreIndexOfTimeseriesIndex = (props) => {
                 onClose={onCloseChunk}
                 open={openChunk}
             >
-                {/* style={{ height: "80vh", overflow: "auto" }} */}
-                <div >
-                    <Tree
-                        height={'78vh'}
-                        showLine={{ showLeafIcon: false }}
-                        showIcon={true}
-                        onSelect={onChunkSelect}
-                        loadData={onLoadChunkTreeData}
-                        treeData={chunkTreeData}
-                    />
+                <div id="tree-div" style={{ height: "80vh", background: "white", margin: '4px 0px 0px 0px' }}>
+                    <TreeArborist
+                        openByDefault={false}
+                        disableDrag={false}
+                        width={"100%"}
+                        height={treeHeight}
+                        // paddingBottom={200}
+                        //height={400}
+                        data={chunkTreeData}
+                    >
+                        {Node1}
+                    </TreeArborist>
                 </div>
 
                 <Drawer

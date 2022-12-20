@@ -26,45 +26,44 @@ const { Sider, Content } = Layout;
 const Tsfile = (props) => {
 
     const { fileName, baseInfo } = props;
-    const intl = useIntl();
 
     const doMessageShow = (msg, offset) => {
         props.showStructureContext()
         props.doChange(msg, offset)
     }
-    const getMessage = (wrap)=>{
+    const getMessage = (wrap) => {
         let message;
         let messageShow;
-        if(wrap == undefined){
+        if (wrap == undefined) {
             message = "";
             messageShow = "";
-        }else{
-            message = <div className={styles.hcenter}>{wrap.deviceName }<br/>{"[" + wrap.offset + "]"}</div>;
-            messageShow = wrap.deviceName +"\n[" + wrap.offset + "]";
+        } else {
+            message = <div className={styles.hcenter}>{wrap.deviceName}<br />{"[" + wrap.offset + "]"}</div>;
+            messageShow = wrap.deviceName + "\n[" + wrap.offset + "]";
         }
         return (
-            <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{messageShow}</span>}>
+            <Tooltip placement="bottomLeft" title={<span style={{ "whiteSpace": "pre-line" }}>{messageShow}</span>}>
                 <h3 className={styles.hcenter}>{message}</h3>
             </Tooltip>
         )
     }
-    const getMessageIndex = (wrap)=>{
+    const getMessageIndex = (wrap) => {
         let message;
         let messageShow;
-        if(wrap == undefined){
+        if (wrap == undefined) {
             message = "";
             messageShow = "";
-        }else{
-            if(!wrap.aligned){
-                message = <div className={styles.hcenter}>{wrap.deviceId }<br/>{"[" + wrap.measurementId + "]"}<br/>{"[" + wrap.offset + "]"}</div>;
-                messageShow = wrap.deviceId +"\n[" + wrap.measurementId + "]\n[" + wrap.offset + "]";
-            }else{
-                message = <div className={styles.hcenter}>{wrap.deviceId }<br/>{"[" + wrap.offset + "]"}</div>;
-                messageShow = wrap.deviceId +"\n[" + wrap.offset + "]";
+        } else {
+            if (!wrap.aligned) {
+                message = <div className={styles.hcenter}>{wrap.deviceId}<br />{"[" + wrap.measurementId + "]"}<br />{"[" + wrap.offset + "]"}</div>;
+                messageShow = wrap.deviceId + "\n[" + wrap.measurementId + "]\n[" + wrap.offset + "]";
+            } else {
+                message = <div className={styles.hcenter}>{wrap.deviceId}<br />{"[" + wrap.offset + "]"}</div>;
+                messageShow = wrap.deviceId + "\n[" + wrap.offset + "]";
             }
         }
         return (
-            <Tooltip placement="bottomLeft" title={<span style={{"whiteSpace":"pre-line"}}>{message}</span>}>
+            <Tooltip placement="bottomLeft" title={<span style={{ "whiteSpace": "pre-line" }}>{message}</span>}>
                 <h3 className={styles.hcenter}>{message}</h3>
             </Tooltip>
         )
@@ -132,7 +131,7 @@ const Tsfile = (props) => {
             <div className={styles.notoplinerow}>
                 <Row align="middle" justify="center" style={{ height: "45px" }}>
                     <Col span={22} style={{ height: "40px" }}>
-                        <div className={styles.shortStyle} onClick={() => doMessageShow("TsfileMetaDataSize")}><h3 className={styles.hcenter}>TsfileMetaDataSize{"[" + baseInfo.metadataSize + "]"}</h3></div>
+                        <div className={styles.shortStyle} onClick={() => doMessageShow("TsfileMetaDataSize")}><h3 className={styles.hcenter}>TsfileMetaDataSize{"[" + baseInfo.metadataSize + " bytes]"}</h3></div>
                     </Col>
                 </Row>
             </div>
@@ -148,6 +147,7 @@ const Tsfile = (props) => {
 }
 
 const ImageMessage = (props) => {
+    const intl = useIntl();
     const { value, offset, showStructureContext, filePath } = props;
     const [version, setVersion] = useState();
     const [tsfileMetaDataSize, setTsfileMetaDataSize] = useState();
@@ -177,10 +177,10 @@ const ImageMessage = (props) => {
     const showImage = (key, offset) => {
         if (key == "TSFILE") {
             getVersion();
-            let message = '说明：\n' +
-                'TSFILE 魔数 offset=0 size=6\n' +
-                'VERSION:' + version + ' 版本 offset=6 size=1\n' +
-                '文件末尾 TSFILE 标记结束 offset= 文件长度-6 size=6';
+            let message = intl.formatMessage({ id: 'overview.explanation', }) + '：\n' +
+                'TSFILE, ' + intl.formatMessage({ id: 'overview.magicNumber', }) + ' offset=0 size=6\n' +
+                'VERSION:' + version + ', ' + intl.formatMessage({ id: 'overview.version', }) + ' offset=6 size=1\n' +
+                intl.formatMessage({ id: 'overview.endExplanation', }) + ' offset= file.length-6 size=6';
             return (<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{message}</pre>);
         }
 
@@ -302,7 +302,7 @@ const Overview = (props) => {
     const [indexTimeseriesIndexBrief, setIndexTimeseriesIndexBrief] = useState()
     // 结构CGH/CH/PH点击所对应的内容
     const [structureContext, setStructureContext] = useState()
-
+    const intl = useIntl();
     const { fileName, filePath, baseInfo } = props;
 
     const doChange = (structureName, offset) => {
@@ -372,43 +372,43 @@ const Overview = (props) => {
     const showStructureContext = (level1Flag, level2Flag) => {
         if (level1Flag == 'ChunkGroup') {
             if (level2Flag == 'CGH') {
-                let info = "结构说明：\n"
+                let info = intl.formatMessage({ id: 'overview.structureDescription', }) + "：\n"
                     + "\t CGH = ChunkGroupHeader \n"
                     + "\t CGD = ChunkGroupData \n"
                     + "\t CGD = n * Chunk \n"
                     + "\t ChunkGroup = CGH +CGD \n"
-                    + "内容详情: \n"
+                    + intl.formatMessage({ id: 'overview.details', }) + ": \n"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(chunkGroupBrief.cgh, null, '\t')}</pre>)
             }
             if (level2Flag == 'CH') {
-                let info = "结构说明：\n"
+                let info = intl.formatMessage({ id: 'overview.structureDescription', }) + "：\n"
                     + "\t CH = ChunkHeader \n"
                     + "\t CD = ChunkData \n"
                     + "\t CD = n * Page \n"
                     + "\t Chunk = CH +CD \n"
-                    + "内容详情: \n"
+                    + intl.formatMessage({ id: 'overview.details', }) + ": \n"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(chunkGroupBrief.ch, null, '\t')}</pre>)
             }
             if (level2Flag == 'PH') {
-                let info = "结构说明：\n"
+                let info = intl.formatMessage({ id: 'overview.structureDescription', }) + "：\n"
                     + "\t PH = PageHeader \n"
                     + "\t PD = PageData \n"
                     + "\t Page = PH + PD \n"
-                    + "内容详情: \n"
+                    + intl.formatMessage({ id: 'overview.details', }) + ": \n"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(chunkGroupBrief.ph, null, '\t')}</pre>)
             }
         } else if (level1Flag == 'TimeseriesIndex') {
             if (level2Flag == 'TM') {
-                let info = "结构说明：\n"
+                let info = intl.formatMessage({ id: 'overview.structureDescription', }) + "：\n"
                     + "\t TM = TimeseriesMetadata \n"
                     + "\t TimeseriesIndex = TM + n*CM \n"
-                    + "内容详情: \n"
+                    + intl.formatMessage({ id: 'overview.details', }) + ": \n"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(timeseriesIndexBrief.tm, null, '\t')}</pre>)
             }
             if (level2Flag == 'CM') {
-                let info = "结构说明：\n"
+                let info = intl.formatMessage({ id: 'overview.structureDescription', }) + "：\n"
                     + "\t CM = ChunkMetadata \n"
-                    + "内容详情: \n"
+                    + intl.formatMessage({ id: 'overview.details', }) + ": \n"
                 setStructureContext(<pre style={{ height: "55vh", overflow: "auto", whiteSpace: "pre-wrap" }}>{info}{JSON.stringify(timeseriesIndexBrief.cm, null, '\t')}</pre>)
             }
         } else if (level1Flag == 'IndexOfTimeseriesIndex') {

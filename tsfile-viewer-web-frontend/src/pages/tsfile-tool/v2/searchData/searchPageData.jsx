@@ -38,26 +38,25 @@ const SearchPageData = (props) => {
     const intl = useIntl();
 
 
-    const doQuery = async () => {
-
+    const doQuery = async (measurementValue) => {
 
         if (device == undefined || device == null || device == '') {
             notification.info({ message: "device " + intl.formatMessage({ id: 'tsviewer.more.notNull', }) })
             return;
         }
 
-        if (measurement == undefined || measurement == null || measurement == '') {
+        if (measurementValue == undefined || measurementValue == null || measurementValue == '') {
             notification.info({ message: "measurement " + intl.formatMessage({ id: 'tsviewer.more.notNull', }) })
             return;
         }
 
         if (beginDate == undefined || beginDate == null || beginDate == '') {
-            notification.info({ message: "beginDate " } + intl.formatMessage({ id: 'tsviewer.more.notNull', }))
+            notification.info({ message: "beginDate " + intl.formatMessage({ id: 'tsviewer.more.notNull', }) })
             return;
         }
 
         if (endDate == undefined || endDate == null || endDate == '') {
-            notification.info({ message: "device " + intl.formatMessage({ id: 'tsviewer.more.notNull', }) })
+            notification.info({ message: "endDate " + intl.formatMessage({ id: 'tsviewer.more.notNull', }) })
             return;
         }
 
@@ -134,7 +133,7 @@ const SearchPageData = (props) => {
                             onChange={(e) => {
                                 setMeasureMent(e.target.value)
                             }}
-                            onSearch={() => doQuery()}
+                            onSearch={(value) => doQuery(value)}
                             style={{
                                 width: 200,
                             }}

@@ -45,5 +45,5 @@ swagger:
   enable: true
 tsviewer:
   web:
-     baseDirectory: C:\Users\lilong\Desktop\
+     baseDirectory: /tsfile
      containerSize: 5

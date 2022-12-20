@@ -57,6 +57,11 @@
 						<phase>generate-resources</phase>
 					</execution>
 					<execution>
+						<id></id>
+						<goals></goals>
+						<phase></phase>
+					</execution>
+					<execution>
 						<id>yarn install</id>
 						<goals>
 							<goal>yarn</goal>

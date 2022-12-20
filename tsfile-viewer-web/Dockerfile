@@ -16,34 +16,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-
-server:
-  port: 8080
-  servlet: 
-     session: 
-        cookie:
-           http-only: false
-spring:
-  servlet:
-    multipart:
-      max-file-size: 300MB
-      max-request-size: 300MB
-  main:
-    allow-bean-definition-overriding: true
-  messages:
-    basename: messages/message
-    encoding: utf-8
-management:
-  endpoint:
-    shutdown:
-      enabled: true
-  endpoints:
-    web:
-      exposure:
-        include: '*'
-swagger:
-  enable: true
-tsviewer:
-  web:
-     baseDirectory: C:\Users\lilong\Desktop\
-     containerSize: 5
+FROM openjdk:8
+COPY target/iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar app.jar
+COPY docker.yml application.yml
+EXPOSE 8080
+RUN bash -c 'touch /app.jar'
+RUN bash -c 'touch /application.yml'
+VOLUME /tsfile
+ENTRYPOINT ["java","-jar","/app.jar","--spring.config.location=application.yml"]

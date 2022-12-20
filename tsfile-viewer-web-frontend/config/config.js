@@ -49,6 +49,10 @@ export default defineConfig({
   // umi routes: https://umijs.org/docs/routing
   routes: [
     {
+      path: '/',
+      component: 'Welcome'
+    },
+    {
       path: '/tsfile-tool/v2/',
       name: 'tsfile-tool',
       icon: 'FileOutlined', 

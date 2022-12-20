@@ -16,10 +16,10 @@
  */
 import { PageLoading } from '@ant-design/pro-layout';
 import { message } from 'antd';
-import { history,SelectLang } from 'umi';
+import { history, SelectLang } from 'umi';
 import Footer from '@/components/Footer';
 import { forwardRef } from 'react';
-const fowardPath = '/tsfile-tool/v2/';
+const fowardPath = '/';
 /** 获取用户信息比较慢的时候会展示一个 loading */
 
 export const initialStateConfig = {
@@ -67,10 +67,10 @@ export const initialStateConfig = {
 export const request = {
   errorHandler: (error) => {
     const { response } = error;
-    if(response.status == '404'){
+    if (response.status == '404') {
       history.push("/exception/404")
     }
-    if(response.status == '500' || response.status == '502' || response.status == '503' || response.status == '504'){
+    if (response.status == '500' || response.status == '502' || response.status == '503' || response.status == '504') {
       history.push("/exception/500")
     }
     throw error;
@@ -85,15 +85,15 @@ export const layout = ({ initialState }) => {
     onPageChange: () => {
       const { location } = history; // 如果没有登录，重定向到 login
       let pathname = location.pathname.endsWith('/') ?
-       location.pathname.substring(0, location.pathname.length - 1):
-       location.pathname;
-      if(pathname == ''){
+        location.pathname.substring(0, location.pathname.length - 1) :
+        location.pathname;
+      if (pathname == '') {
         history.push(fowardPath);
       }
     },
     menuHeaderRender: undefined,
     itemRender: (route, params, routes) => {
-      if(routes.indexOf(route) == route.length -1){
+      if (routes.indexOf(route) == route.length - 1) {
         return <span>{route.breadcrumbName}</span>;
       }
       return <span>{route.breadcrumbName}</span>;

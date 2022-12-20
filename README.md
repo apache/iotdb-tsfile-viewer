@@ -20,17 +20,21 @@
 -->
 
 # iotdb-tsfile-viewer
+<!--
 [![Main Mac and Linux](https://github.com/apache/iotdb/actions/workflows/main-unix.yml/badge.svg)](https://github.com/apache/iotdb/actions/workflows/main-unix.yml)
 [![Main Win](https://github.com/apache/iotdb/actions/workflows/main-win.yml/badge.svg)](https://github.com/apache/iotdb/actions/workflows/main-win.yml)
+-->
 # Outline
 - [Introduction](#Introduction)
 - [Quick Start](#quick-start)
     - [Prerequisites](#Prerequisites)
     - [Compile](#Compile)
 - [User Guide](#user-guide)
+- [Build Docker Image](#build-docker-image)
 - [Maintainers](#Maintainers)
 - [Contributing](#Contributing)
 - [Contributors](#Contributors)
+- [FAQ Summary](#faq-summary)
 # Introduction
 tsfile-viewer is a tool to view TSFILE. Currently, we support bit granularity parsing of TsFile and provide visual display.  
 we have three modules in the project
@@ -103,6 +107,14 @@ tsviewer:
   web:
      baseDirectory: C:\Users\Administrator\Desktop\
 ```
+The system can load up to 5 tsfile files by default, you can modify this value through application.yml  
+```
+tsfile-viewer-web\src\main\resources\application.yml
+
+tsviewer:
+  web:
+     containerSize: 5
+```
 
 # User Guide
 
@@ -150,6 +162,16 @@ Display the index structure in the form of a tree
 Data Search function:  
 ![image](/imgs/datasearch.png) 
 
+# Build Docker Image
+There is a dockerfile in tsfile-viewer-web, through which you can easily build a docker image.  
+After you have successfully executed the 'mvn clean install' command,enter the tsfile-viewer-web project and execute the following command  
+```
+docker build -t iotdb-tsfile-viewer:0.13.2-SNAPSHOT .
+docker run --volume=D:\tsfile:/tsfile -p 8080:8080 -d iotdb-tsfile-viewer:0.13.2-SNAPSHOT
+```
+
+docker.yml is the corresponding configuration file in docker image.
+If you want to modify the folder path of tsfile, you need to modify docker.yml, dockerfile and the --volume parameter of the dock run command.
 
 # Maintainers
 
@@ -157,3 +179,7 @@ Data Search function:
 Feel free to dive in! Open an issue or submit PRs.
 # Contributors
 This project exists thanks to all the people who contribute.
+
+# FAQ Summary
+- 1 After the project is cloned, use mvn clean install to report a spotless exception; usually found on windows, the reason is that when git clones the project on windows, LF will be converted to CRLF, in this case, execute the mvn spotless:apply command to solve the problem
+- 2 Some front-end components cannot be downloaded, enter the tsfile-viewer-web-frontend project, enter the node folder, and execute the command ".\yarn\dist\bin\yarn set registry http://registry.npm.taobao.org/" switch to Taobao mirror

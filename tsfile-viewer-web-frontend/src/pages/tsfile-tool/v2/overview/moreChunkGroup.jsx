@@ -17,13 +17,14 @@
 import React, { useState, useEffect } from "react";
 import { Card, Layout, Button, Drawer, Tree, Input, PageHeader, notification, Pagination, Table, Tooltip } from 'antd';
 import styles from '../style.less'
-import { GroupOutlined, RetweetOutlined, CopyOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { GroupOutlined, RetweetOutlined, MinusSquareOutlined, PlusSquareOutlined, CopyOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import {
     getChunkGroupsListUsingPOST, getChunkGroupInfoUsingPOST, getChunkListUsingPOST, getPageListUsingPOST
     , getPageInfoUsingPOST
 } from '@/services/swagger1/tsfileViewerController'
 import moment from 'moment';
 import { useIntl } from 'umi';
+import { Tree as TreeArborist } from "react-arborist";
 
 const { Header, Footer, Sider, Content } = Layout;
 const { Search } = Input;
@@ -42,6 +43,9 @@ const MoreChunkGroup = (props) => {
     const [columnsLength, setColumnsLength] = useState();
     const [pageData, setPageData] = useState()
     const intl = useIntl();
+    const [structureMapLoading, setStructureMapLoading] = useState();
+    const [treeHeight, setTreeHeight] = useState()
+    const [randomFlag, setRandomFlag] = useState()
 
     var pageDataCache;
 
@@ -70,17 +74,24 @@ const MoreChunkGroup = (props) => {
         if (details == undefined) {
             return
         }
+        setStructureMapLoading(true)
         let res = await getChunkListUsingPOST({ offset: details.offset, filePath: filePath, offsetType: 'CG' })
         if (res.code == 0) {
-            setTreeData(Object.values(res.data).map((chunkInfo) => {
+            setRandomFlag(moment(new Date()).valueOf())
+            let tree = Object.values(res.data).map((node) => {
                 let tree = {};
-                tree['title'] = chunkInfo.measurementId;
-                tree['key'] = chunkInfo.offset;
-                tree['icon'] = <GroupOutlined />
+                tree['name'] = node.measurementId;
+                tree['id'] = node.measurementId + '-' + node.offset + randomFlag;
+                // tree['icon'] = <RightOutlined />
                 tree['isLeaf'] = false;
+                tree['position'] = node.offset;
                 return tree;
-            }))
+            })
+            setTreeData(tree)
             setopenChunk(true);
+            var div = document.getElementById('tree-div');
+            setTreeHeight(div.offsetHeight)
+            setStructureMapLoading(false);
         } else {
             notification.error({
                 message: res.message,
@@ -88,50 +99,6 @@ const MoreChunkGroup = (props) => {
         }
 
     };
-
-    const updateTreeData = (list, key, children) => {
-        return list.map((node) => {
-            if (node.key === key) {
-                return {
-                    ...node,
-                    children,
-                };
-            }
-            // 这个应该是用来加载子节点的子节点的，应该需要修改children对象
-            // if (node.children) {
-            //     return {
-            //         ...node,
-            //         children: updateTreeData(node.children, key, children),
-            //     };
-            // }
-            return node;
-        });
-    }
-
-
-    const onLoadData = async ({ key, children }) => {
-        let res = await getPageListUsingPOST({ offset: key, filePath: filePath })
-
-        if (res.code == 0) {
-            let pages = Object.values(res.data).map((pageInfo) => {
-                let tree = {};
-                tree['title'] = pageInfo.pageNo;
-                tree['key'] = pageInfo.offset;
-                tree['icon'] = <CopyOutlined />
-                tree['isLeaf'] = true;
-                tree['pageInfo'] = pageInfo;
-                return tree;
-            })
-            setTreeData(origin =>
-                updateTreeData(origin, key, pages),
-            );
-        } else {
-            notification.error({
-                message: res.message,
-            });
-        }
-
-    }
 
     const onCloseChunk = () => {
         setopenChunk(false);
@@ -145,55 +112,57 @@ const MoreChunkGroup = (props) => {
         setopenPage(false);
     };
 
-    const onSelect = async (selectedKeys, info) => {
-        if (info.node.isLeaf == true) {
-            let param = info.node.pageInfo;
-            param['chunkGroupOffset'] = details.offset;
-            param['filePath'] = filePath;
-            let res = await getPageInfoUsingPOST(param)
-            if (res.code == 0) {
-                //pagedata信息
-                let cols = [{
-                    title: 'No',
-                    fixed: 'left',
-                    width: '100px',
-                    // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
-                    render: (text, record, index) => {
-                        return index + 1
-                    }
+    const onSelect = async (info) => {
+        if (!info.isLeaf) {
+            return
+        }
+        let param = info.pageInfo;
+        param['chunkGroupOffset'] = details.offset;
+        param['filePath'] = filePath;
+        let res = await getPageInfoUsingPOST(param)
+        if (res.code == 0) {
+            //pagedata信息
+            let cols = [{
+                title: 'No',
+                fixed: 'left',
+                width: '100px',
+                // render: (text, record, index) => `${index + 1}`,  //每一页都从1开始
+                render: (text, record, index) => {
+                    return index + 1
+                }
 
-                }]
-                cols.push(...Object.values(res.data.title).map((titleName, key) => {
-                    if (titleName == 'timestamp') {
-                        return {
-                            title: (
+            }]
+            cols.push(...Object.values(res.data.title).map((titleName, key) => {
+                if (titleName == 'timestamp') {
+                    return {
+                        title: (
+                            <>
+                                {titleName}<span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                <RetweetOutlined
+                                    onClick={() => {
+                                        pageDataCache = Object.values(pageDataCache).map((item) => {
+                                            if ((item[0] + "").indexOf("-") > -1) {
+                                                item[0] = moment(item[0], 'YYYY-MM-DD HH:mm:ss.SSS').valueOf()
+                                            } else {
+                                                item[0] = moment(Number(item[0])).format('YYYY-MM-DD HH:mm:ss.SSS')
+                                            }
+                                            return item
+                                        })
+                                        setPageData(pageDataCache)
+                                    }}
+                                />
+                            </>),
+                        dataIndex: titleName,
+                        key: titleName,
+                        fixed: 'left',
+                        width: '250px',
+                        render: (text, record, index) => {
+                            return (
                                 <>
-                                    {titleName}<span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
-                                    <RetweetOutlined
-                                        onClick={() => {
-                                            pageDataCache = Object.values(pageDataCache).map((item)=>{
-                                                if((item[0]+"").indexOf("-") > -1){
-                                                    item[0] = moment(item[0],'YYYY-MM-DD HH:mm:ss.SSS').valueOf()
-                                                } else {
-                                                    item[0] = moment(Number(item[0])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                                                }
-                                                return item
-                                            })
-                                            setPageData(pageDataCache)
-                                        }}
-                                    />
-                                </>),
-                            dataIndex: titleName,
-                            key: titleName,
-                            fixed: 'left',
-                            width: '250px',
-                            render: (text, record, index) => {
-                                return (
-                                    <>
-                                        <span id={index}>
-                                            {record[key]}
-                                        </span>
-                                        {/* <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
+                                    <span id={index}>
+                                        {record[key]}
+                                    </span>
+                                    {/* <span>{'\u00A0\u00A0\u00A0\u00A0'}</span>
                                         <RetweetOutlined
                                             onClick={(e) => {
                                                 if (document.getElementById(index).innerText.indexOf("-") > -1) {
@@ -202,33 +171,32 @@ const MoreChunkGroup = (props) => {
                                                     document.getElementById(index).innerText = moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                                                 }
                                             }} /> */}
-                                    </>
-                                )
+                                </>
+                            )
 
-                                // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
-                            }
-                        }
-                    } else {
-                        return {
-                            title: titleName,
-                            dataIndex: titleName,
-                            key: titleName,
-                            render: (text, record, index) => {
-                                return record[key]
-                            }
+                            // return moment(Number(record[key])).format('YYYY-MM-DD HH:mm:ss.SSS')
                         }
                     }
-                }))
-                setColumnsLength(cols.length)
-                setColumns(cols)
-                setPageData(res.data.values);
-                pageDataCache = res.data.values;
-                showPage()
-            } else {
-                notification.error({
-                    message: res.message,
-                });
-            }
+                } else {
+                    return {
+                        title: titleName,
+                        dataIndex: titleName,
+                        key: titleName,
+                        render: (text, record, index) => {
+                            return record[key]
+                        }
+                    }
+                }
+            }))
+            setColumnsLength(cols.length)
+            setColumns(cols)
+            setPageData(res.data.values);
+            pageDataCache = res.data.values;
+            showPage()
+        } else {
+            notification.error({
+                message: res.message,
+            });
         }
     };
 
@@ -293,6 +261,61 @@ const MoreChunkGroup = (props) => {
         cardSelect = id;
     }
 
+    const updateTreeData = (list, id, children) => {
+        return list.map((node) => {
+            if (node.id === id) {
+                return {
+                    ...node,
+                    children,
+                };
+            }
+            //这个应该是用来加载子节点的子节点的，应该需要修改children对象
+            if (node.children) {
+                return {
+                    ...node,
+                    children: updateTreeData(node.children, id, children),
+                };
+            }
+            return node;
+        });
+    }
+
+    const onLoadTreeData = async (expanded, node) => {
+        if (expanded && node.children == undefined) {
+            let res = await getPageListUsingPOST({ offset: node.position, filePath: filePath })
+            if (res.code == 0) {
+                let newTree = Object.values(res.data).map((child) => {
+                    let tree = {};
+                    tree['name'] = child.pageNo;
+                    tree['id'] = child.pageNo + '-' + child.offset + randomFlag;
+                    tree['isLeaf'] = true;
+                    tree['position'] = child.offset;
+                    tree['pageInfo'] = child;
+                    return tree;
+                })
+                let data = treeData;
+                let pa = updateTreeData(data, node.id, newTree);
+                setTreeData(pa)
+            } else {
+                notification.error({
+                    message: res.message,
+                });
+            }
+        }
+    }
+
+    function Node({ node, style, dragHandle, tree }) {
+        if (!node.isOpen && !node.data.isLeaf && node.data.children == undefined && node.isSelected) {
+            onLoadTreeData(!node.isOpen, node.data)
+        }
+        /* This node instance can do many things. See the API reference. */
+        return (
+            <div style={{ ...style, overflow: "hidden", width: "155vh", textOverflow: "ellipsis", whiteSpace: "nowrap" }} ref={dragHandle} onClick={() => (onSelect(node.data))}>
+                {node.data.isLeaf ? "" : node.isOpen ? <MinusSquareOutlined onClick={() => (node.toggle())} /> : <PlusSquareOutlined onClick={() => (node.toggle())} />} <span style={{ background: node.isSelected && node.data.isLeaf ? "#FFDFD4" : "white" }}>{node.data.isLeaf ? <CopyOutlined /> : <GroupOutlined />}{node.data.name}</span>
+            </div>
+        );
+    }
+
     useEffect(() => {
         generateChunkGroupCards(1, pageSize);
     }, [])
@@ -308,7 +331,7 @@ const MoreChunkGroup = (props) => {
                                     placeholder="deviceName"
                                     allowClear
                                     onChange={(e) => { setDeviceNameLike(e.target.value) }}
-                                    onSearch={() => { generateChunkGroupCards(1, pageSize) }}
+                                    onSearch={() => { setCardList([]),generateChunkGroupCards(1, pageSize) }}
                                     style={{
                                         width: 500,
                                     }}
@@ -330,7 +353,7 @@ const MoreChunkGroup = (props) => {
                         <PageHeader
                             style={{ background: "#f2f2f2" }}
                             extra={(
-                                <Button type="primary" onClick={() => showChunk(details)}>{intl.formatMessage({ id: 'tsviewer.more.structureMap', })}</Button>
+                                <Button type="primary" loading={structureMapLoading} onClick={() => showChunk(details)}>{intl.formatMessage({ id: 'tsviewer.more.structureMap', })}</Button>
                             )}>
                         </PageHeader>
                         <Details></Details>
@@ -356,14 +379,18 @@ const MoreChunkGroup = (props) => {
                 onClose={onCloseChunk}
                 open={openChunk}
             >
-                <div style={{ height: "80vh", overflow: "auto" }}>
-                    <Tree
-                        showLine={{ showLeafIcon: false }}
-                        showIcon={true}
-                        onSelect={onSelect}
-                        loadData={onLoadData}
-                        treeData={treeData}
-                    />
+                <div id="tree-div" style={{ height: "80vh", background: "white", margin: '4px 0px 0px 0px' }}>
+                    <TreeArborist
+                        openByDefault={false}
+                        disableDrag={false}
+                        width={"100%"}
+                        height={treeHeight}
+                        // paddingBottom={200}
+                        //height={400}
+                        data={treeData}
+                    >
+                        {Node}
+                    </TreeArborist>
                 </div>
 
                 <Drawer
@@ -385,10 +412,10 @@ const MoreChunkGroup = (props) => {
                     open={openPage}
                 >
                     <Table columns={columns} dataSource={pageData} scroll={{ x: 150 * columnsLength, y: "80vh" }}
-                        rowKey={(record)=>{
+                        rowKey={(record) => {
                             return record[0];
                         }}
-                        pagination={{ pageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
+                        pagination={{ defaultPageSize: 100, showQuickJumper: true, position: ["bottomCenter"] }}
                         bordered />
                 </Drawer>
             </Drawer>

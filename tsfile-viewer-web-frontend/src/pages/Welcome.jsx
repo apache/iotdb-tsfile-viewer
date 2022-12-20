@@ -31,12 +31,25 @@ const CodePreview = ({ children }) => (
 export default () => {
   const intl = useIntl();
   return (
-    <PageContainer>
+    <PageContainer
+      fixedHeader
+      header={{
+        title: (
+          <div style={{ whiteSpace: "pre-wrap" }}>
+            {intl.formatMessage({
+              id: 'pages.welcome.message',
+              defaultMessage: 'Welcome to Tsfile viewer',
+            })}
+          </div>
+        ),
+        ghost: true,
+      }}
+    >
       <Card>
         <Alert
           message={intl.formatMessage({
             id: 'pages.welcome.alertMessage',
-            defaultMessage: 'Faster and stronger heavy-duty components have been released.',
+            defaultMessage: 'The front-end project build depends on antd and antdpro',
           })}
           type="success"
           showIcon
@@ -47,32 +60,33 @@ export default () => {
           }}
         />
         <Typography.Text strong>
-          <FormattedMessage id="pages.welcome.advancedComponent" defaultMessage="Advanced Form" />{' '}
-          <a
-            href="https://procomponents.ant.design/components/table"
-            rel="noopener noreferrer"
-            target="__blank"
-          >
-            <FormattedMessage id="pages.welcome.link" defaultMessage="Welcome" />
-          </a>
+          <FormattedMessage id="pages.welcome.antd" defaultMessage={intl.formatMessage({
+            id: 'pages.welcome.antd',
+            defaultMessage: 'antd URL',
+          })} />{' '}
         </Typography.Text>
-        <CodePreview>yarn add @ant-design/pro-table</CodePreview>
+        <CodePreview>https://ant.design/index-cn</CodePreview>
+
+        <Typography.Text strong>
+          <FormattedMessage id="pages.welcome.antdpro" defaultMessage={intl.formatMessage({
+            id: 'pages.welcome.antdpro',
+            defaultMessage: ' antd pro URL',
+          })} />{' '}
+        </Typography.Text>
+        <CodePreview>https://pro.ant.design/zh-CN/</CodePreview>
+
         <Typography.Text
           strong
           style={{
             marginBottom: 12,
           }}
         >
-          <FormattedMessage id="pages.welcome.advancedLayout" defaultMessage="Advanced layout" />{' '}
-          <a
-            href="https://procomponents.ant.design/components/layout"
-            rel="noopener noreferrer"
-            target="__blank"
-          >
-            <FormattedMessage id="pages.welcome.link" defaultMessage="Welcome" />
-          </a>
+          <FormattedMessage id="pages.welcome.git" defaultMessage={intl.formatMessage({
+            id: 'pages.welcome.git',
+            defaultMessage: 'The git address of this project',
+          })} />{' '}
         </Typography.Text>
-        <CodePreview>yarn add @ant-design/pro-layout</CodePreview>
+        <CodePreview>https://github.com/apache/iotdb-tsfile-viewer</CodePreview>
       </Card>
     </PageContainer>
   );
