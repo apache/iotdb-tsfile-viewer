@@ -28,6 +28,7 @@ public class TsfileViewerException extends Exception {
   public static final String CONTAINER_SIZE_REACHED_MAXIMUM = "TSVIEWER-0003";
   public static final String UNSUPPORTED_OFFSETTYPE = "TSVIEWER-0004";
   public static final String INTERRUPTED_EXCEPTION = "TSVIEWER-0005";
+  public static final String EMPTY_FILE = "TSVIEWER-0006";
   //    public static final String PATH_NOT_EXIST = "TSVIEWER-";
   //    public static final String PATH_NOT_EXIST = "TSVIEWER-";
 

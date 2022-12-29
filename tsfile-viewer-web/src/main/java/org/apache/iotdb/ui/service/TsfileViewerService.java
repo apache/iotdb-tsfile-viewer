@@ -147,6 +147,10 @@ public class TsfileViewerService {
    */
   public void loadFile(String filePath) throws IOException, TsfileViewerException {
     filePath = getFullPath(filePath);
+    File file = new File(filePath);
+    if (file.length() == 0) {
+      throw new TsfileViewerException(TsfileViewerException.EMPTY_FILE, "");
+    }
     if (tsfileViewerContainer.contain(filePath)) {
       return;
     }
