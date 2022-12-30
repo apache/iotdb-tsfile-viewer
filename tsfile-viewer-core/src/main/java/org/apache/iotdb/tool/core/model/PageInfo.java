@@ -50,66 +50,82 @@ public class PageInfo implements IPageInfo {
     this.position = position;
   }
 
+  @Override
   public int getUncompressedSize() {
     return uncompressedSize;
   }
 
+  @Override
   public int getCompressedSize() {
     return compressedSize;
   }
 
+  @Override
   public long getPosition() {
     return position;
   }
 
+  @Override
   public TSDataType getDataType() {
     return dataType;
   }
 
+  @Override
   public TSEncoding getEncodingType() {
     return encodingType;
   }
 
+  @Override
   public CompressionType getCompressionType() {
     return compressionType;
   }
 
+  @Override
   public byte getChunkType() {
     return chunkType;
   }
 
+  @Override
   public Statistics<? extends Serializable> getStatistics() {
     return statistics;
   }
 
+  @Override
   public void setUncompressedSize(int uncompressedSize) {
     this.uncompressedSize = uncompressedSize;
   }
 
+  @Override
   public void setCompressedSize(int compressedSize) {
     this.compressedSize = compressedSize;
   }
 
+  @Override
   public void setPosition(long position) {
     this.position = position;
   }
 
+  @Override
   public void setDataType(TSDataType dataType) {
     this.dataType = dataType;
   }
 
+  @Override
   public void setEncodingType(TSEncoding encodingType) {
     this.encodingType = encodingType;
   }
 
+  @Override
   public void setCompressionType(CompressionType compressionType) {
     this.compressionType = compressionType;
   }
 
+  @Override
   public void setChunkType(byte chunkType) {
     this.chunkType = chunkType;
   }
 
+  @Override
   public void setStatistics(Statistics<? extends Serializable> statistics) {
     this.statistics = statistics;
   }

@@ -21,7 +21,7 @@ package org.apache.iotdb.ui.model.tsviewer;
 /** @Author: LL @Description: @Date: create in 2022/10/25 16:24 */
 public class TimeseriesIndexVO {
 
-  private boolean isAligned;
+  private boolean aligned;
 
   private long offset;
 
@@ -30,11 +30,11 @@ public class TimeseriesIndexVO {
   private String measurementId;
 
   public boolean isAligned() {
-    return isAligned;
+    return aligned;
   }
 
-  public void setAligned(boolean aligned) {
-    isAligned = aligned;
+  public void setAligned(boolean isAligned) {
+    aligned = isAligned;
   }
 
   public long getOffset() {
