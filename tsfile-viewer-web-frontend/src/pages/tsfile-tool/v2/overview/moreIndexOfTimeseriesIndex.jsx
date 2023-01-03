@@ -66,13 +66,13 @@ const MoreIndexOfTimeseriesIndex = (props) => {
         let res = await getChunkListUsingPOST({ offset: node.position, filePath: filePath, offsetType: 'TS_INDEX', beginDate: beginDate, endDate: endDate })
         if (res.code == 0) {
             setRandomFlag(moment(new Date()).valueOf())
-            let tree = Object.values(res.data).map((node) => {
+            let tree = Object.values(res.data).map((child) => {
                 let tree = {};
-                tree['name'] = node.measurementId;
-                tree['id'] = node.measurementId + '-' + node.offset + randomFlag;
+                tree['name'] = child.measurementId;
+                tree['id'] = child.measurementId + '-' + child.offset + randomFlag;
                 // tree['icon'] = <RightOutlined />
                 tree['isLeaf'] = false;
-                tree['position'] = node.offset;
+                tree['position'] = child.offset;
                 tree['timeseriesIndexOffset'] = node.position;
                 return tree;
             })

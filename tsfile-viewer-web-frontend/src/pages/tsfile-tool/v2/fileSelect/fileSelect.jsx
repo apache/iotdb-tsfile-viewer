@@ -277,9 +277,12 @@ const FileSelect = (props) => {
     }
 
     const handelTableChanged = async (pagenation, filters) => {
-        console.log(filters)
-        setTableFilters(filters)
-        setIsSameFolder(false)
+        if(tableFilters == undefined && filters.status == null){
+
+        }else{
+            setTableFilters(filters)
+            setIsSameFolder(false)
+        }
     }
 
     const filtersResult = async () => {

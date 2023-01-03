@@ -22,7 +22,7 @@ package org.apache.iotdb.tool.core.model.web;
 /** @Author: LL @Description: @Date: create in 2022/10/20 17:35 */
 public class ChunkOffsetInfo {
 
-  private boolean isAligned;
+  private boolean aligned;
 
   private Long offset;
 
@@ -33,11 +33,11 @@ public class ChunkOffsetInfo {
   private long endTime;
 
   public boolean isAligned() {
-    return isAligned;
+    return aligned;
   }
 
-  public void setAligned(boolean aligned) {
-    isAligned = aligned;
+  public void setAligned(boolean isAligned) {
+    aligned = isAligned;
   }
 
   public Long getOffset() {

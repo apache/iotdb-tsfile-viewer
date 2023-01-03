@@ -110,6 +110,7 @@ public class EncodeCompressAnalysedModel {
     this.score = score;
   }
 
+  @Override
   public String toString() {
     return "typeName : "
         + typeName
