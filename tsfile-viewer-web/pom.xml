@@ -24,7 +24,7 @@
 		<frontend-project-dist-dir>${project.parent.basedir}/tsfile-viewer-web-frontend/dist</frontend-project-dist-dir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
-		<spring.boot.version>2.2.11.RELEASE</spring.boot.version>
+		<spring.boot.version>2.5.15</spring.boot.version>
 		<fastjson.version>1.2.70</fastjson.version>
 		<spotless.version>2.4.2</spotless.version>
 	</properties>
