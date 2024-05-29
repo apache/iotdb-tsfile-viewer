@@ -19,8 +19,8 @@
 
 server:
   port: 8080
-  servlet: 
-     session: 
+  servlet:
+     session:
         cookie:
            http-only: false
 spring:
@@ -40,7 +40,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'
+        include: health,info
 swagger:
   enable: true
 tsviewer:
