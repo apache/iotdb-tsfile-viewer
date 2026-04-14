@@ -1,0 +1,79 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: tsfile-viewer
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+      file-size-threshold: 2MB
+  devtools:
+    restart:
+      enabled: true
+      additional-paths:
+        - src/main/java
+        - src/main/resources
+    livereload:
+      enabled: true
+      port: 35729
+
+# TSFile Viewer Configuration
+tsfile:
+  allowed-directories: ${TSFILE_ALLOWED_DIRS:/Volumes/data/sources/tsfile-viewer/tsfile-samples}
+  upload-directory: ${TSFILE_UPLOAD_DIR:/Volumes/data/sources/tsfile-viewer/tsfile-samples}
+  cache:
+    metadata:
+      max-size: 1000
+      ttl-minutes: 60
+    reader:
+      max-size: 100
+      ttl-minutes: 30
+  query:
+    timeout-seconds: 30
+    max-result-size: 10000
+    default-page-size: 100
+  scan:
+    max-concurrent: 2
+    single-file-timeout-seconds: 30
+    task-timeout-minutes: 30
+    cache-max-size: 100
+    cache-ttl-minutes: 60
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    org.apache.tsfile.viewer: DEBUG
+    org.apache.tsfile: INFO
+    org.springframework.web: INFO

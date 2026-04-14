@@ -1,185 +1,310 @@
-<!--
+# TSFile Viewer
 
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+A web-based application for viewing and analyzing Apache IoTDB TSFile format data. Built with Vue 3 and Spring Boot 4.
 
-        http://www.apache.org/licenses/LICENSE-2.0
+[中文文档](README.zh-CN.md) | [English](README.md)
 
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+## Features
 
--->
+- **File Management**: Browse server directories and upload TSFile files
+- **Metadata Viewing**: Display comprehensive TSFile metadata including schema, devices, measurements, and statistics
+- **Data Preview**: Paginated data tables with advanced filtering (time range, devices, measurements, value range)
+- **Data Visualization**: Interactive charts using ECharts 6 with multi-series overlay, aggregation, and drill-down
+- **Tree & Table Models**: Support for both Tree Model (path-based) and Table Model (relational) TSFile formats
+- **Export**: Export filtered data as CSV or JSON, export charts as PNG or SVG
+- **Performance**: Chunk-level reading, metadata caching, automatic downsampling for large datasets
+- **Deployment Flexibility**: Support for both embedded (single JAR) and separate (frontend + backend) deployment
 
-# iotdb-tsfile-viewer
-<!--
-[![Main Mac and Linux](https://github.com/apache/iotdb/actions/workflows/main-unix.yml/badge.svg)](https://github.com/apache/iotdb/actions/workflows/main-unix.yml)
-[![Main Win](https://github.com/apache/iotdb/actions/workflows/main-win.yml/badge.svg)](https://github.com/apache/iotdb/actions/workflows/main-win.yml)
--->
-# Outline
-- [Introduction](#Introduction)
-- [Quick Start](#quick-start)
-    - [Prerequisites](#Prerequisites)
-    - [Compile](#Compile)
-- [User Guide](#user-guide)
-- [Build Docker Image](#build-docker-image)
-- [Maintainers](#Maintainers)
-- [Contributing](#Contributing)
-- [Contributors](#Contributors)
-- [FAQ Summary](#faq-summary)
-# Introduction
-tsfile-viewer is a tool to view TSFILE. Currently, we support bit granularity parsing of TsFile and provide visual display.  
-we have three modules in the project
-- tsfile-viewer-core: core jar package project
-- tsfile-viewer-web: web viewer backend,When you execute the mvn install command in the parent project, it will package the front-end project code together
-- tsfile-viewer-web-frontend: web viewer frontend
+## Technology Stack
 
-1. overview: This tool can Clearly display information of each part of TsFile, details are as follows:
-    1. The versionNumber.
-    2. The data layer: contains details of each level and statistic information.
+### Backend
 
-       i. ChunkGroup
+- Spring Boot 4.0.1 with JDK 21
+- Apache TSFile 2.2.0
+- Caffeine cache for metadata and reader caching
+- Maven 3.9+
 
-       ii. Chunk
+### Frontend
 
-       iii. Page
+- Vue 3.5.x with Composition API
+- Vite 8.x build tool
+- Nuxt UI components (Tailwind CSS-based)
+- Pinia 2.x state management
+- ECharts 6.0.x for visualization
+- TypeScript 5.4.x+
 
-       iv. Point
-    3. The index layer: displayed in a tree like structure then you can easily view the overall structure of the secondary
-       index(entity and measurement granularity).
+## Quick Start
 
-2. Timeseries and measurement search: In addition to displaying data, we also provide the function of querying TimeSeries by keyword. There is a linkage
-   between the index layer and the data layer, it can quickly locate the desired TimeSeries with details.
+### Prerequisites
 
-<!-- 3. The encoding and compression type of a timeseries analysis: tsfile-mt provide the analysis of the current timeseries encoding and compression. In addition, tsfile-mt also provide the analysis
-   of the combination of various encoding and compression types of the timeseries. -->
+- JDK 17 or 21 (LTS)
+- Maven 3.9+
+- Node.js ^20.19.0 || >=22.12.0
+- pnpm package manager
 
-# Quick Start
-## Prerequisites
-To use the tool, you need to have:
-1. Java >= 1.8 
-2. Maven >= 3.6  
+### Development Mode
 
-Of course, you will also notice that there is a front-end project in the project. When you execute the mvn install command, the project will download its corresponding environment, and you don't have to configure the environment separately for it.
-## Compile
-You can download the source code from:
-```
-git@github.com:apache/iotdb-tsfile-viewer.git
-https://github.com/apache/iotdb-tsfile-viewer.git
-```
-Under the root path of iotdb-tsfile-viewer:
-```
-mvn clean install
-```
-then you can start this tool in the tsfile-viewer-web project 
-you can add '-Dfile.endoding=utf8' command to avoid some Chinese garbled problems,mainly to solve the situation that some device names in the tsfile file contain Chinese
-```
-java -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
-java -Dfile.endoding=utf8 -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar
+1. **Start Backend:**
+
+   ```bash
+   cd backend
+   mvn spring-boot:run
+   ```
+
+   Backend will run at `http://localhost:8080`
+
+2. **Start Frontend:**
+
+   ```bash
+   cd frontend
+   pnpm install
+   pnpm dev
+   ```
+
+   Frontend will run at `http://localhost:5173`
+
+3. **Access Application:**
+   Open `http://localhost:5173/view/` in your browser
+
+### Production Build
+
+#### Embedded Deployment (Single JAR)
+
+```bash
+# Linux/Mac
+./build-embedded.sh
+
+# Windows
+build-embedded.bat
+
+# Run
+java -jar backend/target/tsfile-viewer-*.jar
 ```
 
-you can also specify a configuration file through the '--spring.config.location=./data/application.yml' command  
-```
-java -jar iotdb-tsfile-viewer-web-0.13.2-SNAPSHOT.jar --spring.config.location=./data/application.yml
-```
-The default url is
-```
-http://localhost:8080/
-```
-You can modify the port through the file
-```
-iotdb-tsfile-viewer\tsfile-viewer-web-frontend\config\config.js
-tsfile-viewer-web\src\main\resources\application.yml
-```
-You can specify the parent folder location for tsfiles
-```
-tsfile-viewer-web\src\main\resources\application.yml
+Access at `http://localhost:8080/view/`
 
-tsviewer:
-  web:
-     baseDirectory: C:\Users\Administrator\Desktop\
-```
-The system can load up to 5 tsfile files by default, you can modify this value through application.yml  
-```
-tsfile-viewer-web\src\main\resources\application.yml
+#### Separate Deployment
 
-tsviewer:
-  web:
-     containerSize: 5
+```bash
+# Linux/Mac
+./build-separate.sh
+
+# Windows
+build-separate.bat
 ```
 
-# User Guide
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
 
-When you visit http://locallhost:8080, you will get the following page.  
-![image](/imgs/entry.png)  
-- 1 you can get some tips when your mouse over this icon
-- 2 multilingual switching
-- 3 file management,when you click this button, you will get the following page.  
+## Configuration
 
-![image](/imgs/file-management.png)
-- 1 click to change the directory
-- 2 the status of the files
-- 3 get the loaded files
-- 4 the operation, open a tsfile, when the file loaded success, you will get the following page.  
+### Backend Configuration
 
-![image](/imgs/overview-tsfile.png)
-- 1 ChunkGroups
-- 2 TimeseriesIndexs
-- 3 IndexOfTimeseriesIndexs  
+Edit `backend/src/main/resources/application.yml`:
 
-The white blocks are clickable, when you click on them, their corresponding simple information will be displayed on the right.  
-You can get more infos by click the 'more info' block.  
+```yaml
+tsfile:
+  # Whitelist of allowed directories
+  allowed-directories:
+    - /data/tsfiles
+    - /uploads/tsfiles
 
-![image](/imgs/chunkgroup.png)  
+  # Upload directory
+  upload-directory: /uploads/tsfiles
 
-- 1 the ChunkGroups,the name is the device name
-- 2 the brief info of a ChunkGroup
-- 3 click here to get the Chunks info of a ChunkGroup
-![image](/imgs/chunkinfo.png)  
-
-Click the page node to get pageData.  
-
-![image](/imgs/pagedata.png)
-
-The TimeseriesIndexs is used similarly to ChunkGroups  
-
-![image](/imgs/timeseriesindex.png)
-
-Display the index structure in the form of a tree  
-
-![image](/imgs/indexoftimeseriesindex.png)
-
-![image](/imgs/indexoftimeseriesindex-chunk.png)
-
-Data Search function:  
-![image](/imgs/datasearch.png) 
-
-# Build Docker Image
-There is a dockerfile in tsfile-viewer-web, through which you can easily build a docker image.  
-After you have successfully executed the 'mvn clean install' command,enter the tsfile-viewer-web project and execute the following command  
-```
-docker build -t iotdb-tsfile-viewer:0.13.2-SNAPSHOT .
-docker run --volume=D:\tsfile:/tsfile -p 8080:8080 -d iotdb-tsfile-viewer:0.13.2-SNAPSHOT
+  # Cache settings
+  cache:
+    metadata:
+      max-size: 1000
+      ttl-minutes: 60
+    reader:
+      max-size: 100
+      ttl-minutes: 30
 ```
 
-docker.yml is the corresponding configuration file in docker image.
-If you want to modify the folder path of tsfile, you need to modify docker.yml, dockerfile and the --volume parameter of the dock run command.
+### Frontend Configuration
 
-# Maintainers
+Create `frontend/.env.production`:
 
-# Contributing
-Feel free to dive in! Open an issue or submit PRs.
-# Contributors
-This project exists thanks to all the people who contribute.
+```env
+# API base URL (default/recommended for reverse proxy)
+VITE_API_BASE_URL=/api
+```
 
-# FAQ Summary
-- 1 After the project is cloned, use mvn clean install to report a spotless exception; usually found on windows, the reason is that when git clones the project on windows, LF will be converted to CRLF, in this case, execute the mvn spotless:apply command to solve the problem
-- 2 Some front-end components cannot be downloaded, enter the tsfile-viewer-web-frontend project, enter the node folder, and execute the command ".\yarn\dist\bin\yarn set registry http://registry.npm.taobao.org/" switch to Taobao mirror
+## Project Structure
+
+```
+tsfile-viewer/
+├── backend/              # Spring Boot Maven project
+│   ├── src/main/java/
+│   │   └── com/timecho/tsfile/viewer/
+│   │       ├── controller/   # REST API endpoints
+│   │       ├── service/      # Business logic
+│   │       ├── tsfile/       # TSFile parsing utilities
+│   │       ├── config/       # Spring configuration
+│   │       └── dto/          # Data transfer objects
+│   └── pom.xml
+├── frontend/             # Vue 3 + Vite SPA
+│   ├── src/
+│   │   ├── views/        # Page components
+│   │   ├── components/   # Reusable components
+│   │   ├── stores/       # Pinia state management
+│   │   ├── api/          # API client
+│   │   └── composables/  # Vue composables
+│   └── package.json
+├── tsfile-source/        # TSFile v2.2.0 source (reference)
+├── build-embedded.sh     # Embedded deployment build script
+├── build-separate.sh     # Separate deployment build script
+├── docs/                 # Project documentation
+│   ├── DEPLOYMENT.md     # Deployment guide
+│   ├── API.md            # API documentation
+│   └── ...
+└── README.md
+```
+
+## Usage
+
+### 1. File Selection
+
+- Browse server directories using the file tree
+- Upload local TSFile files (drag-drop or click to browse)
+- Access recently viewed files from the recent files list
+
+### 2. Metadata Viewing
+
+- View basic information: version, time range, device/measurement counts
+- Toggle between Tree Model and Table Model views
+- Explore measurements with data types, encoding, and compression
+- Browse RowGroups and Chunks with detailed statistics
+
+### 3. Data Preview
+
+- Apply filters: time range, devices, measurements, value range
+- Navigate paginated data with sortable columns
+- Export filtered data as CSV or JSON
+
+### 4. Data Visualization
+
+- Select measurements for multi-series charts
+- Apply aggregation functions (min, max, avg, count)
+- Zoom and pan with DataZoom controls
+- Click data points for drill-down details
+- Export charts as PNG or SVG
+
+## API Endpoints
+
+- `GET /api/files/tree` - Browse file tree
+- `POST /api/files/upload` - Upload TSFile
+- `GET /api/meta/{fileId}` - Get metadata
+- `POST /api/data/preview` - Preview data with filters
+- `POST /api/data/query` - Query chart data with aggregation
+
+See API documentation at `/swagger-ui.html` (if enabled)
+
+## Development
+
+### Backend
+
+```bash
+cd backend
+
+# Run tests
+mvn test
+
+# Format code
+mvn spotless:apply
+
+# Check formatting
+mvn spotless:check
+
+# Build
+mvn clean package
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Install dependencies
+pnpm install
+
+# Run dev server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Run tests
+pnpm test:unit
+
+# Lint
+pnpm lint
+
+# Format
+pnpm format
+
+# Type check
+pnpm type-check
+```
+
+## Testing
+
+### Backend Tests
+
+131 tests covering:
+
+- TSFile parsing utilities
+- Data reading and filtering
+- Cache behavior
+- REST API endpoints
+- Error handling
+
+Run: `mvn test`
+
+### Frontend Tests
+
+Component and integration tests using Vitest + Vue Test Utils
+
+Run: `pnpm test:unit`
+
+## Performance
+
+- **Chunk-level reading**: Streams data without loading entire files
+- **Metadata caching**: 1-hour TTL, 1000 entries max
+- **Reader caching**: 30-minute TTL, 100 entries max
+- **Automatic downsampling**: LTTB algorithm for >1000 data points
+- **Virtual scrolling**: Efficient rendering for large tables
+- **Route-based code splitting**: Lazy loading for optimal bundle size
+
+## Security
+
+- **Directory whitelist**: Restricts file system access to configured paths
+- **Upload validation**: File extension and size checks
+- **Reverse Proxy Support**: Recommended way to connect in separate deployment
+- **Path traversal protection**: Rejects `..` and absolute paths outside whitelist
+
+## License
+
+See [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and formatting
+5. Submit a pull request
+
+## Support
+
+For issues and questions:
+
+- Check [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment help
+- Review API documentation
+- Open a GitHub issue
+
+## Acknowledgments
+
+- Apache IoTDB TSFile library
+- Vue.js and Spring Boot communities
+- ECharts visualization library
