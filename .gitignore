@@ -1,22 +1,39 @@
-/target/
-/.classpath
-/.project
-/.settings/
-/bin/
-.idea/
-*.iml
-tsfile-viewer-core/target/
-tsfile-viewer-web-frontend/target/
-tsfile-viewer-web-frontend/node_modules/
-tsfile-viewer-web-frontend/src/.umi/
-tsfile-viewer-web-frontend/yarn.lock
-tsfile-viewer-web-frontend/src/.umi-production/
-tsfile-viewer-web-frontend/yarn.lock
-tsfile-viewer-web-frontend/dist/
-tsfile-viewer-web-frontend/.*
-tsfile-viewer-web-frontend/package-lock.json
-tsfile-viewer-web-frontend/yarn-error.log
-tsfile-viewer-web/src/main/resources/static/
-tsfile-viewer-web/target/
-tsfile-viewer-web-frontend/target/
-tsfile-viewer-web-frontend/node/
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+backend/target
+backend/src/main/resources/static/
+
+node_modules
+tsfile-samples
+release
+
+specs
+.claude
+.specify
+.kiro
+.omc
+.playwright-mcp
+.jqwik-database
+.DS_Store

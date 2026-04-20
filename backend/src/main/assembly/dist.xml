@@ -1,0 +1,84 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+  <id>dist</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <baseDirectory>tsfile-viewer</baseDirectory>
+
+  <!-- 包含 Spring Boot fat JAR -->
+  <files>
+    <file>
+      <source>${project.build.directory}/${project.build.finalName}.jar</source>
+      <destName>tsfile-viewer.jar</destName>
+      <outputDirectory>/</outputDirectory>
+    </file>
+  </files>
+
+  <!-- 包含 dist/ 目录下的启动脚本、配置文件、用户手册 -->
+  <fileSets>
+    <!-- 启动脚本（可执行） -->
+    <fileSet>
+      <directory>${project.basedir}/../dist</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>start.sh</include>
+      </includes>
+      <fileMode>0755</fileMode>
+    </fileSet>
+
+    <!-- 启动脚本（Windows）、配置文件、用户手册 -->
+    <fileSet>
+      <directory>${project.basedir}/../dist</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>start.bat</include>
+        <include>application.yml</include>
+        <include>用户手册.md</include>
+      </includes>
+      <fileMode>0644</fileMode>
+    </fileSet>
+
+    <!-- 空的 data 目录 -->
+    <fileSet>
+      <directory>${project.basedir}/../dist</directory>
+      <outputDirectory>/data</outputDirectory>
+      <excludes>
+        <exclude>**/*</exclude>
+      </excludes>
+    </fileSet>
+
+    <!-- 空的 logs 目录 -->
+    <fileSet>
+      <directory>${project.basedir}/../dist</directory>
+      <outputDirectory>/logs</outputDirectory>
+      <excludes>
+        <exclude>**/*</exclude>
+      </excludes>
+    </fileSet>
+  </fileSets>
+
+</assembly>
