@@ -25,6 +25,7 @@ import { setupI18n } from "./i18n";
 import { usePreferencesStore } from "./stores/preferences";
 import "@unocss/reset/tailwind-compat.css";
 import "virtual:uno.css";
+import "./theme/stripe.css";
 
 const app = createApp(App);
 
