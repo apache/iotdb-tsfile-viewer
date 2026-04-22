@@ -41,7 +41,7 @@ const router = useRouter();
 const route = useRoute();
 const fileStore = useFileStore();
 const { locale } = useI18n();
-const { themeAlgorithm } = useTheme();
+const { themeConfig, isDark } = useTheme();
 const collapsed = ref(false);
 const happyMode = ref(true);
 
@@ -69,9 +69,9 @@ function handleDirectorySelect(path: string, _name: string) {
 
 <template>
   <HappyProvider :enabled="happyMode" v-slot="{ wave }">
-    <ConfigProvider :locale="antdLocale" :wave="wave" :theme="{ algorithm: themeAlgorithm }">
+    <ConfigProvider :locale="antdLocale" :wave="wave" :theme="themeConfig">
       <Layout style="height: 100vh; overflow: hidden;">
-        <AntLayoutHeader style="background: #001529; line-height: normal; height: 48px; padding: 0; flex-shrink: 0;">
+        <AntLayoutHeader style="line-height: normal; height: 48px; padding: 0; flex-shrink: 0;">
           <LayoutHeader />
         </AntLayoutHeader>
         <Layout style="flex: 1; overflow: hidden;">
@@ -80,7 +80,7 @@ function handleDirectorySelect(path: string, _name: string) {
             collapsible
             :width="280"
             :collapsed-width="0"
-            theme="light"
+            :theme="isDark ? 'dark' : 'light'"
           >
             <div style="padding: 16px; overflow-y: auto; height: 100%;">
               <FileTree @select="handleFileSelect" @select-directory="handleDirectorySelect" />

@@ -1,0 +1,125 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+:root {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Ant Design component refinements ── */
+
+.ant-card {
+  box-shadow: 0 6px 12px -2px rgba(50, 50, 93, 0.12),
+    0 3px 7px -3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.ant-card:hover {
+  box-shadow: 0 13px 27px -5px rgba(50, 50, 93, 0.2),
+    0 8px 16px -8px rgba(0, 0, 0, 0.12);
+}
+
+.ant-table-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-btn-primary {
+  font-weight: 500;
+}
+
+.ant-layout-sider {
+  border-right: 1px solid var(--ant-color-border, #e3e8ee);
+}
+
+/* ── Dark mode: Ant Design overrides ── */
+
+.dark .ant-layout-sider {
+  border-right-color: var(--ant-color-border, #2a3a50);
+}
+
+.dark .ant-layout-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .ant-card {
+  box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.3),
+    0 3px 7px -3px rgba(0, 0, 0, 0.2);
+}
+
+.dark .ant-card:hover {
+  box-shadow: 0 13px 27px -5px rgba(0, 0, 0, 0.35),
+    0 8px 16px -8px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Dark mode: Tailwind utility class overrides ──
+   Covers hardcoded bg-white, text-gray-*, border-gray-* in components
+   that don't have explicit dark: variants.
+*/
+
+.dark body,
+.dark .ant-layout,
+.dark .ant-layout-content {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.dark .bg-white {
+  background-color: var(--ant-color-bg-container, #0b1b2e);
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--ant-color-bg-elevated, #0f2035);
+}
+
+.dark .bg-gray-100 {
+  background-color: var(--ant-color-bg-elevated, #0f2035);
+}
+
+.dark .text-gray-800 {
+  color: var(--ant-color-text, rgba(255, 255, 255, 0.88));
+}
+
+.dark .text-gray-700 {
+  color: var(--ant-color-text, rgba(255, 255, 255, 0.88));
+}
+
+.dark .text-gray-600 {
+  color: var(--ant-color-text-secondary, rgba(255, 255, 255, 0.65));
+}
+
+.dark .text-gray-500 {
+  color: var(--ant-color-text-secondary, rgba(255, 255, 255, 0.65));
+}
+
+.dark .text-gray-400 {
+  color: var(--ant-color-text-tertiary, rgba(255, 255, 255, 0.45));
+}
+
+.dark .border-gray-200 {
+  border-color: var(--ant-color-border, #2a3a50);
+}
+
+.dark .border-gray-100 {
+  border-color: var(--ant-color-border-secondary, #1e2d40);
+}
+
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--ant-color-border, #2a3a50);
+}

@@ -51,7 +51,7 @@ const treeData = ref<FlatNode[]>([]);
 const expandedKeys = ref<string[]>([]);
 const loadingKeys = ref<Set<string>>(new Set());
 const loading = ref(false);
-const error = ref<string | null>(null);
+const hasError = ref(false);
 
 function transformNode(node: TreeNode): FlatNode {
   const result: FlatNode = {
@@ -92,14 +92,14 @@ function setNodeChildren(nodes: FlatNode[], key: string, children: FlatNode[]): 
 
 async function loadRootTree() {
   loading.value = true;
-  error.value = null;
+  hasError.value = false;
   try {
     const response = await fileApi.getTree();
     const children = extractChildren(response);
     treeData.value = children.map((node: TreeNode) => transformNode(node));
   } catch {
     treeData.value = [];
-    error.value = t("tsfile.file.loadTreeError");
+    hasError.value = true;
   } finally {
     loading.value = false;
   }
@@ -166,7 +166,7 @@ onMounted(() => {
       <h3 class="text-lg font-semibold">{{ t("tsfile.file.browser") }}</h3>
     </div>
 
-    <Alert v-if="error" type="warning" :message="error" show-icon class="mb-4" />
+    <Alert v-if="hasError" type="warning" :message="t('tsfile.file.loadTreeError')" show-icon class="mb-4" />
 
     <Spin :spinning="loading">
       <Tree
@@ -181,7 +181,7 @@ onMounted(() => {
       />
     </Spin>
 
-    <div v-if="!loading && !error && treeData.length === 0" class="py-6 text-center text-gray-500">
+    <div v-if="!loading && !hasError && treeData.length === 0" class="py-6 text-center text-gray-500">
       <span class="i-mdi:folder-alert mb-2 inline-block text-4xl text-yellow-400 opacity-70" />
       <p class="mx-2 text-sm leading-relaxed">{{ t("tsfile.file.emptyTreeHint") }}</p>
     </div>

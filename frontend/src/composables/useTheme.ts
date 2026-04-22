@@ -24,6 +24,13 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { theme } from "antdv-next";
 
 import { usePreferencesStore } from "../stores/preferences";
+import {
+  stripeComponentTokens,
+  stripeDarkLayoutTokens,
+  stripeDarkTokens,
+  stripeLightLayoutTokens,
+  stripeLightTokens,
+} from "../theme/stripeTheme";
 
 import type { Theme } from "../stores/preferences";
 
@@ -57,6 +64,15 @@ export function useTheme() {
   const themeAlgorithm = computed(() => {
     return isDark.value ? darkAlgorithm : defaultAlgorithm;
   });
+
+  const themeConfig = computed(() => ({
+    token: isDark.value ? stripeDarkTokens : stripeLightTokens,
+    algorithm: themeAlgorithm.value,
+    components: {
+      ...stripeComponentTokens,
+      ...(isDark.value ? stripeDarkLayoutTokens : stripeLightLayoutTokens),
+    },
+  }));
 
   // Set theme
   function setTheme(newTheme: Theme) {
@@ -126,6 +142,7 @@ export function useTheme() {
     theme: computed(() => preferencesStore.theme),
     isDark,
     themeAlgorithm,
+    themeConfig,
     setTheme,
     toggleTheme,
   };
