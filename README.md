@@ -1,6 +1,6 @@
 # TSFile Viewer
 
-A web-based application for viewing and analyzing Apache IoTDB TSFile format data. Built with Vue 3 and Spring Boot 4.
+A web-based application for viewing and analyzing Apache TsFile format data. Built with Vue 3 and Spring Boot 4.
 
 [中文文档](README.zh-CN.md) | [English](README.md)
 
@@ -305,6 +305,6 @@ For issues and questions:
 
 ## Acknowledgments
 
-- Apache IoTDB TSFile library
+- Apache TsFile library
 - Vue.js and Spring Boot communities
 - ECharts visualization library
