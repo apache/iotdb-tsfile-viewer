@@ -1,6 +1,6 @@
 # TSFile 查看器
 
-一个基于 Web 的应用程序，用于查看和分析 Apache IoTDB TSFile 格式数据。使用 Vue 3 和 Spring Boot 4 构建。
+一个基于 Web 的应用程序，用于查看和分析 Apache TsFile 格式数据。使用 Vue 3 和 Spring Boot 4 构建。
 
 ## 功能特性
 
@@ -313,6 +313,6 @@ pnpm type-check
 
 ## 致谢
 
-- Apache IoTDB TSFile 库
+- Apache TsFile 库
 - Vue.js 和 Spring Boot 社区
 - ECharts 可视化库
