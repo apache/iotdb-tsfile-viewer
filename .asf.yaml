@@ -18,8 +18,8 @@
 #
 
 github:
-  description: "Apache IoTDB TsFile Viewer"
-  homepage: https://iotdb.apache.org/
+  description: "Apache TsFile Viewer"
+  homepage: https://tsfile.apache.org/
   labels:
     - timeseries
     - tsfile
