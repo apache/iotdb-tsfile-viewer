@@ -178,6 +178,7 @@
       "pages": "页",
       "moreAvailable": "还有更多数据",
       "noDataFound": "未找到数据",
+      "dataReadWarning": "部分数据无法读取",
       "enterDevices": "输入设备名称（逗号分隔）",
       "enterMeasurements": "输入测点名称（逗号分隔）",
       "advancedFilter": "高级筛选",

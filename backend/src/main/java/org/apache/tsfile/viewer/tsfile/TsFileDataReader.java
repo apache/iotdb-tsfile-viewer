@@ -97,6 +97,7 @@ public class TsFileDataReader {
     private final boolean hasMore;
     private final List<String> columnNames;
     private final List<String> columnTypes;
+    private final List<String> warnings;
 
     public DataReadResult(
         List<DataRow> data,
@@ -104,11 +105,22 @@ public class TsFileDataReader {
         boolean hasMore,
         List<String> columnNames,
         List<String> columnTypes) {
+      this(data, totalRowsRead, hasMore, columnNames, columnTypes, new ArrayList<>());
+    }
+
+    public DataReadResult(
+        List<DataRow> data,
+        int totalRowsRead,
+        boolean hasMore,
+        List<String> columnNames,
+        List<String> columnTypes,
+        List<String> warnings) {
       this.data = data;
       this.totalRowsRead = totalRowsRead;
       this.hasMore = hasMore;
       this.columnNames = columnNames;
       this.columnTypes = columnTypes;
+      this.warnings = warnings != null ? warnings : new ArrayList<>();
     }
 
     public List<DataRow> getData() {
@@ -129,6 +141,10 @@ public class TsFileDataReader {
 
     public List<String> getColumnTypes() {
       return columnTypes;
+    }
+
+    public List<String> getWarnings() {
+      return warnings;
     }
   }
 
@@ -206,6 +222,7 @@ public class TsFileDataReader {
     List<DataRow> results = new ArrayList<>();
     List<String> colNames = new ArrayList<>();
     List<String> colTypes = new ArrayList<>();
+    List<String> warnings = new ArrayList<>();
     int skipped = 0, collected = 0;
     boolean hasMore = false;
 
@@ -301,10 +318,23 @@ public class TsFileDataReader {
           }
         } catch (NoTableException | NoMeasurementException | ReadProcessException e) {
           logger.warn("Error querying {}: {}", tblName, e.getMessage());
+          warnings.add("Error querying table '" + tblName + "': " + e.getMessage());
+        } catch (java.nio.BufferUnderflowException | java.nio.BufferOverflowException e) {
+          logger.warn(
+              "Buffer error reading table {}, possibly incompatible file version: {}",
+              tblName,
+              e.getMessage());
+          warnings.add(
+              "Failed to decode data in table '"
+                  + tblName
+                  + "': file may have been created with an incompatible TsFile SDK version");
+        } catch (RuntimeException e) {
+          logger.warn("Unexpected error reading table {}: {}", tblName, e.getMessage());
+          warnings.add("Unexpected error reading table '" + tblName + "': " + e.getMessage());
         }
       }
     }
-    return new DataReadResult(results, collected, hasMore, colNames, colTypes);
+    return new DataReadResult(results, collected, hasMore, colNames, colTypes, warnings);
   }
 
   /** Reads data using an existing reader with time range filtering and pagination. */
@@ -390,6 +420,13 @@ public class TsFileDataReader {
         }
       } catch (NoTableException | NoMeasurementException | ReadProcessException e) {
         logger.warn("Error querying {}: {}", tblName, e.getMessage());
+      } catch (java.nio.BufferUnderflowException | java.nio.BufferOverflowException e) {
+        logger.warn(
+            "Buffer error reading table {}, possibly incompatible file version: {}",
+            tblName,
+            e.getMessage());
+      } catch (RuntimeException e) {
+        logger.warn("Unexpected error reading table {}: {}", tblName, e.getMessage());
       }
     }
     return new DataReadResult(results, collected, hasMore, colNames, colTypes);
@@ -507,6 +544,13 @@ public class TsFileDataReader {
           }
         } catch (NoTableException | NoMeasurementException | ReadProcessException e) {
           logger.warn("Error querying {}: {}", tblName, e.getMessage());
+        } catch (java.nio.BufferUnderflowException | java.nio.BufferOverflowException e) {
+          logger.warn(
+              "Buffer error reading table {}, possibly incompatible file version: {}",
+              tblName,
+              e.getMessage());
+        } catch (RuntimeException e) {
+          logger.warn("Unexpected error reading table {}: {}", tblName, e.getMessage());
         }
       }
     }
@@ -590,6 +634,13 @@ public class TsFileDataReader {
           }
         } catch (NoTableException | NoMeasurementException | ReadProcessException e) {
           logger.warn("Error querying {}: {}", tblName, e.getMessage());
+        } catch (java.nio.BufferUnderflowException | java.nio.BufferOverflowException e) {
+          logger.warn(
+              "Buffer error reading table {}, possibly incompatible file version: {}",
+              tblName,
+              e.getMessage());
+        } catch (RuntimeException e) {
+          logger.warn("Unexpected error reading table {}: {}", tblName, e.getMessage());
         }
       }
     }
@@ -669,6 +720,13 @@ public class TsFileDataReader {
           }
         } catch (NoTableException | NoMeasurementException | ReadProcessException e) {
           logger.warn("Error querying {}: {}", tblName, e.getMessage());
+        } catch (java.nio.BufferUnderflowException | java.nio.BufferOverflowException e) {
+          logger.warn(
+              "Buffer error reading table {}, possibly incompatible file version: {}",
+              tblName,
+              e.getMessage());
+        } catch (RuntimeException e) {
+          logger.warn("Unexpected error reading table {}: {}", tblName, e.getMessage());
         }
       }
     }
@@ -716,6 +774,12 @@ public class TsFileDataReader {
           while (rs.next()) total++;
         } catch (NoTableException | NoMeasurementException | ReadProcessException e) {
           logger.warn("Error counting: {}", e.getMessage());
+        } catch (java.nio.BufferUnderflowException | java.nio.BufferOverflowException e) {
+          logger.warn(
+              "Buffer error counting rows in table {}: {}", ts.getTableName(), e.getMessage());
+        } catch (RuntimeException e) {
+          logger.warn(
+              "Unexpected error counting rows in table {}: {}", ts.getTableName(), e.getMessage());
         }
       }
     }

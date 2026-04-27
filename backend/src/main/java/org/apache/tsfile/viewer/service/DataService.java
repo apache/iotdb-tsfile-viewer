@@ -26,10 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 import org.apache.tsfile.viewer.config.TsFileProperties;
 import org.apache.tsfile.viewer.dto.AdvancedCondition;
 import org.apache.tsfile.viewer.dto.AggregationType;
@@ -46,6 +42,9 @@ import org.apache.tsfile.viewer.exception.AccessDeniedException;
 import org.apache.tsfile.viewer.exception.QueryTimeoutException;
 import org.apache.tsfile.viewer.exception.TsFileNotFoundException;
 import org.apache.tsfile.viewer.tsfile.TsFileDataReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 /**
  * Service for data query operations.
@@ -155,6 +154,7 @@ public class DataService {
           .limit(limit)
           .offset(offset)
           .hasMore(hasMore)
+          .warnings(readResult.getWarnings())
           .build();
 
     } catch (java.util.concurrent.TimeoutException e) {
