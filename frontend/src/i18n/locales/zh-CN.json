@@ -2,7 +2,7 @@
   "tsfile": {
     "app": {
       "title": "TSFile 查看器",
-      "description": "Apache IoTDB TSFile 格式数据查看和分析工具"
+      "description": "Apache TsFile 格式数据查看和分析工具"
     },
     "nav": {
       "home": "首页",
