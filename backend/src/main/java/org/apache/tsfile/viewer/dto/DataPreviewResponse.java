@@ -33,6 +33,7 @@ public class DataPreviewResponse {
   private int limit;
   private int offset;
   private boolean hasMore;
+  private List<String> warnings;
 
   /** Default constructor for JSON deserialization. */
   public DataPreviewResponse() {}
@@ -53,6 +54,21 @@ public class DataPreviewResponse {
     this.limit = limit;
     this.offset = offset;
     this.hasMore = hasMore;
+  }
+
+  public DataPreviewResponse(
+      List<DataRow> data,
+      int total,
+      int limit,
+      int offset,
+      boolean hasMore,
+      List<String> warnings) {
+    this.data = data;
+    this.total = total;
+    this.limit = limit;
+    this.offset = offset;
+    this.hasMore = hasMore;
+    this.warnings = warnings;
   }
 
   public List<DataRow> getData() {
@@ -95,6 +111,14 @@ public class DataPreviewResponse {
     this.hasMore = hasMore;
   }
 
+  public List<String> getWarnings() {
+    return warnings;
+  }
+
+  public void setWarnings(List<String> warnings) {
+    this.warnings = warnings;
+  }
+
   /** Builder class for creating DataPreviewResponse instances. */
   public static class Builder {
     private List<DataRow> data;
@@ -102,6 +126,7 @@ public class DataPreviewResponse {
     private int limit;
     private int offset;
     private boolean hasMore;
+    private List<String> warnings;
 
     public Builder data(List<DataRow> data) {
       this.data = data;
@@ -128,8 +153,13 @@ public class DataPreviewResponse {
       return this;
     }
 
+    public Builder warnings(List<String> warnings) {
+      this.warnings = warnings;
+      return this;
+    }
+
     public DataPreviewResponse build() {
-      return new DataPreviewResponse(data, total, limit, offset, hasMore);
+      return new DataPreviewResponse(data, total, limit, offset, hasMore, warnings);
     }
   }
 

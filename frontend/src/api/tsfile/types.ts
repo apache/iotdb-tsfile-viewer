@@ -182,6 +182,7 @@ export interface DataPreviewResponse {
   limit: number;
   offset: number;
   hasMore: boolean;
+  warnings?: string[];
 }
 
 // Table Model Query Types

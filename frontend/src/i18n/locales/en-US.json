@@ -178,6 +178,7 @@
       "pages": "pages",
       "moreAvailable": "More data available",
       "noDataFound": "No data found",
+      "dataReadWarning": "Some data could not be read",
       "enterDevices": "Enter device names (comma-separated)",
       "enterMeasurements": "Enter measurement names (comma-separated)",
       "advancedFilter": "Advanced Filter",

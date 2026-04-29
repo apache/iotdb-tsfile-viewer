@@ -51,6 +51,7 @@ const currentLimit = ref(100);
 const hasMore = ref(false);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const warnings = ref<string[]>([]);
 const currentFilters = ref<Record<string, unknown>>({});
 const metadata = ref<TSFileMetadata | null>(null);
 const metaError = ref<string | null>(null);
@@ -115,6 +116,7 @@ async function loadData(filters: Record<string, unknown>) {
     currentOffset.value = response.offset;
     currentLimit.value = response.limit;
     hasMore.value = response.hasMore;
+    warnings.value = response.warnings ?? [];
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : "Failed to load data";
   } finally {
@@ -217,6 +219,19 @@ function goToQuickScan() {
         @change="handleFilterChange"
       />
     </div>
+    <Alert
+      v-if="warnings.length > 0"
+      type="warning"
+      show-icon
+      :message="t('tsfile.data.dataReadWarning')"
+      class="mt-3 flex-shrink-0"
+    >
+      <template #description>
+        <ul class="m-0 pl-4">
+          <li v-for="(w, i) in warnings" :key="i">{{ w }}</li>
+        </ul>
+      </template>
+    </Alert>
     <div class="flex-1 mt-3 min-h-0">
       <DataTable
         :data="dataRows"
