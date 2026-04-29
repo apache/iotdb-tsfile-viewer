@@ -34,7 +34,7 @@
   <artifactId>tsfile-viewer</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>TSFile Viewer</name>
-  <description>Web-based application for viewing and analyzing Apache IoTDB TSFile format data</description>
+  <description>Web-based application for viewing and analyzing Apache TsFile format data</description>
 
   <properties>
     <java.version>17</java.version>

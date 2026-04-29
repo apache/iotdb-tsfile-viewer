@@ -26,8 +26,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 /**
  * Main application class for TSFile Viewer.
  *
- * <p>TSFile Viewer is a web-based application for viewing and analyzing Apache IoTDB TSFile format
- * data through an interactive web interface.
+ * <p>TSFile Viewer is a web-based application for viewing and analyzing Apache TsFile format data
+ * through an interactive web interface.
  */
 @SpringBootApplication
 @ConfigurationPropertiesScan
