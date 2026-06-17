@@ -37,3 +37,11 @@ specs
 .playwright-mcp
 .jqwik-database
 .DS_Store
+
+# Eclipse / m2e IDE files
+.classpath
+.project
+.settings/
+backend/.classpath
+backend/.project
+backend/.settings/

@@ -28,7 +28,7 @@ import type { TableColumnType } from "antdv-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Button, Card, Pagination, Select, Spin, Table } from "antdv-next";
+import { Alert, Button, Card, Input, Pagination, Select, Spin, Table } from "antdv-next";
 import { DownloadOutlined } from "@antdv-next/icons";
 
 interface Props {
@@ -59,7 +59,17 @@ const internalLimit = ref(props.limit);
 const sortColumn = ref<string | null>(null);
 const sortDirection = ref<"asc" | "desc">("asc");
 
+// 字段列分页（避免一次性渲染数千列导致页面卡死）
+const columnPage = ref(1);
+const columnPageSize = ref(50);
+const columnSearch = ref("");
+
 const limitOptions = [10, 20, 50, 100, 200, 500, 1000].map((v) => ({
+  label: String(v),
+  value: v,
+}));
+
+const columnPageSizeOptions = [20, 50, 100, 200].map((v) => ({
   label: String(v),
   value: v,
 }));
@@ -85,10 +95,44 @@ const measurementColumns = computed(() => {
   return [...columns].toSorted();
 });
 
-// 字段列（非标签列）
+// 字段列（非标签列）—— 全量
 const fieldColumnNames = computed(() => {
   const tagSet = new Set(props.tagColumns);
   return measurementColumns.value.filter((col) => !tagSet.has(col));
+});
+
+// 按搜索关键字过滤字段列
+const filteredFieldColumns = computed(() => {
+  const q = columnSearch.value.trim().toLowerCase();
+  if (!q) return fieldColumnNames.value;
+  return fieldColumnNames.value.filter((col) => col.toLowerCase().includes(q));
+});
+
+// 字段列总页数
+const fieldColumnTotalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredFieldColumns.value.length / columnPageSize.value)),
+);
+
+// 当前页可见的字段列
+const visibleFieldColumns = computed(() => {
+  const start = (columnPage.value - 1) * columnPageSize.value;
+  return filteredFieldColumns.value.slice(start, start + columnPageSize.value);
+});
+
+// 当前可见字段列区间（用于展示 "X–Y / 总数"）
+const fieldColumnRange = computed(() => {
+  const totalCols = filteredFieldColumns.value.length;
+  if (totalCols === 0) return { start: 0, end: 0, total: 0 };
+  const start = (columnPage.value - 1) * columnPageSize.value;
+  return { start: start + 1, end: Math.min(start + columnPageSize.value, totalCols), total: totalCols };
+});
+
+// 当列搜索 / 每页列数 / 数据变化时，重置到第一页并防止页码越界
+watch([columnSearch, columnPageSize, fieldColumnNames], () => {
+  columnPage.value = 1;
+});
+watch(fieldColumnTotalPages, (pages) => {
+  if (columnPage.value > pages) columnPage.value = pages;
 });
 
 // 动态列定义
@@ -124,8 +168,8 @@ const columns = computed<TableColumnType[]>(() => {
     });
   }
 
-  // 字段列（可滚动）
-  for (const fieldCol of fieldColumnNames.value) {
+  // 字段列（可滚动）—— 仅渲染当前列分页窗口内的列
+  for (const fieldCol of visibleFieldColumns.value) {
     cols.push({
       title: fieldCol,
       dataIndex: fieldCol,
@@ -138,15 +182,22 @@ const columns = computed<TableColumnType[]>(() => {
   return cols;
 });
 
-// 表格数据（扁平化）
+// 表格横向滚动宽度（用于虚拟滚动，需为数字）
+const scrollX = computed(() => {
+  const fixedWidth = 210 + 180 + props.tagColumns.length * 120;
+  return fixedWidth + visibleFieldColumns.value.length * 120;
+});
+
+// 表格数据（扁平化）—— 仅展开当前可见列，避免每行生成数千个属性
 const tableData = computed(() => {
+  const visibleMeasurements = [...props.tagColumns, ...visibleFieldColumns.value];
   let data = props.data.map((row, index) => {
     const flatRow: Record<string, unknown> = {
       _key: `${row.timestamp}-${row.device}-${index}`,
       timestamp: row.timestamp,
       device: row.device,
     };
-    for (const measurement of measurementColumns.value) {
+    for (const measurement of visibleMeasurements) {
       flatRow[measurement] = formatValue(row.measurements[measurement]);
     }
     return flatRow;
@@ -190,6 +241,11 @@ function handlePageChange(page: number) {
 function handleLimitChange(limit: number) {
   internalLimit.value = limit;
   emit("limitChange", limit);
+}
+
+// 处理字段列分页变化
+function handleColumnPageChange(page: number) {
+  columnPage.value = page;
 }
 
 // 处理排序
@@ -254,14 +310,53 @@ function formatValue(value: unknown): number | string {
       class="mb-4"
     />
 
+    <!-- 字段列控制条：搜索 + 列分页（避免一次性渲染数千列） -->
+    <div
+      v-if="!error && fieldColumnNames.length > columnPageSize"
+      class="mb-3 flex flex-wrap items-center gap-3"
+    >
+      <Input
+        :value="columnSearch"
+        :placeholder="t('tsfile.data.searchColumn')"
+        allow-clear
+        size="small"
+        style="width: 220px"
+        @update:value="(v: string) => (columnSearch = v ?? '')"
+      />
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-500">{{ t("tsfile.data.columnsPerPage") }}:</span>
+        <Select
+          :value="columnPageSize"
+          :options="columnPageSizeOptions"
+          size="small"
+          style="width: 80px"
+          @change="(v: number) => (columnPageSize = v)"
+        />
+      </div>
+      <span class="text-sm text-gray-500">
+        {{ t("tsfile.data.columns") }} {{ fieldColumnRange.start }}–{{ fieldColumnRange.end }} /
+        {{ fieldColumnRange.total }}
+      </span>
+      <Pagination
+        :current="columnPage"
+        :page-size="columnPageSize"
+        :total="filteredFieldColumns.length"
+        :show-size-changer="false"
+        size="small"
+        simple
+        @change="handleColumnPageChange"
+      />
+    </div>
+
     <!-- 数据表格 -->
     <Table
-      v-else
+      v-if="!error"
       :columns="columns"
       :data-source="tableData"
       :loading="loading"
       :pagination="false"
-      :scroll="{ x: 'max-content', y: 'calc(100vh - 500px)' }"
+      :scroll="{ x: scrollX, y: 480 }"
+      :virtual="true"
       bordered
       size="middle"
       row-key="_key"

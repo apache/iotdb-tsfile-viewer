@@ -88,6 +88,17 @@ const measurementOptions = computed(() => {
 
 const numericTypes = new Set(['INT32', 'INT64', 'FLOAT', 'DOUBLE', 'BOOLEAN']);
 
+// 图表模式下默认展示的序列数上限（避免一次性绘制数千条折线导致页面卡死）
+const CHART_DEFAULT_SERIES = 8;
+
+// 取前 N 个数值测点，作为图表默认序列
+function defaultChartMeasurements(): string[] {
+  return (metadata.value?.measurements || [])
+    .filter((m) => m.name && numericTypes.has(m.dataType?.toUpperCase() || ''))
+    .map((m) => m.name)
+    .slice(0, CHART_DEFAULT_SERIES);
+}
+
 const measurementSelectOptions = computed(() => {
   if (!props.chartMode) {
     return measurementOptions.value.map((m) => ({ label: m, value: m }));
@@ -122,11 +133,9 @@ async function loadMetadata() {
     if (deviceOptions.value.length > 0) {
       selectedDevice.value = deviceOptions.value[0]!.value;
     }
-    // In chart mode, auto-select all numeric fields and trigger query
+    // In chart mode, default to the first few numeric fields and trigger query
     if (props.chartMode && metadata.value?.measurements) {
-      selectedMeasurements.value = metadata.value.measurements
-        .filter((m) => m.name && numericTypes.has(m.dataType?.toUpperCase() || ''))
-        .map((m) => m.name);
+      selectedMeasurements.value = defaultChartMeasurements();
       applyFilters();
     }
   } catch (e: unknown) {
@@ -155,11 +164,9 @@ function selectQuickTimeRange(range: string) {
 function applyFilters() {
   const filters: Record<string, unknown> = {};
   if (selectedDevice.value) filters.devices = [selectedDevice.value];
-  // In chart mode, auto-select all numeric fields if none selected
+  // In chart mode, default to the first few numeric fields if none selected
   if (props.chartMode && selectedMeasurements.value.length === 0 && metadata.value?.measurements) {
-    selectedMeasurements.value = metadata.value.measurements
-      .filter((m) => m.name && numericTypes.has(m.dataType?.toUpperCase() || ''))
-      .map((m) => m.name);
+    selectedMeasurements.value = defaultChartMeasurements();
   }
   if (selectedMeasurements.value.length > 0) filters.measurements = selectedMeasurements.value;
   if (timeRange.value) {

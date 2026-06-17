@@ -65,6 +65,14 @@ public class DataService {
   private static final Logger logger = LoggerFactory.getLogger(DataService.class);
   private static final int DEFAULT_MAX_POINTS = 1000;
 
+  /**
+   * Hard upper bound on the number of chart series built per request. Acts as a performance safety
+   * net so a request that selects thousands of measurements (e.g. a wide table model file) cannot
+   * make the backend build and serialize an unbounded number of series. The frontend additionally
+   * refuses to render beyond its own (lower) display threshold.
+   */
+  private static final int MAX_CHART_SERIES = 200;
+
   private final TsFileProperties tsFileProperties;
   private final FileService fileService;
   private final TsFileDataReader dataReader;
@@ -229,11 +237,19 @@ public class DataService {
 
       int maxPoints = request.getMaxPoints() != null ? request.getMaxPoints() : DEFAULT_MAX_POINTS;
 
+      boolean seriesCapped = false;
+      outer:
       for (Map.Entry<String, List<DataRow>> deviceEntry : deviceGroups.entrySet()) {
         String device = deviceEntry.getKey();
         List<DataRow> deviceData = deviceEntry.getValue();
 
         for (String measurement : request.getMeasurements()) {
+          // Performance safety net: never build more than MAX_CHART_SERIES series.
+          if (series.size() >= MAX_CHART_SERIES) {
+            seriesCapped = true;
+            break outer;
+          }
+
           List<double[]> dataPoints = extractMeasurementData(deviceData, measurement);
           if (dataPoints.isEmpty()) continue;
 
@@ -258,6 +274,15 @@ public class DataService {
           // Check timeout
           checkTimeout(startTime, timeoutSeconds);
         }
+      }
+
+      if (seriesCapped) {
+        logger.warn(
+            "Chart series capped at {} for fileId={} (requested {} measurements across {} devices)",
+            MAX_CHART_SERIES,
+            request.getFileId(),
+            request.getMeasurements().size(),
+            deviceGroups.size());
       }
 
       // Calculate time range

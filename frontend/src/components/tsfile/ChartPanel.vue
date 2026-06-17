@@ -66,6 +66,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { t } = useI18n();
 
+// 单图最多渲染的序列数，超过则拒绝绘制并提示（防止数千条折线卡死浏览器）
+const MAX_CHART_SERIES = 50;
+const tooManySeries = computed(() => props.series.length > MAX_CHART_SERIES);
+
 const chartRef = ref<HTMLDivElement | null>(null);
 let chartInstance: echarts.ECharts | null = null;
 const chartHeight = ref(500);
@@ -138,6 +142,7 @@ const chartOption = computed(() => {
 function initChart() {
   if (!chartRef.value) return;
   chartInstance = echarts.init(chartRef.value);
+  if (tooManySeries.value) return;
   chartInstance.setOption(chartOption.value);
 }
 
@@ -145,6 +150,11 @@ function initChart() {
 function updateChart() {
   if (!chartInstance) {
     initChart();
+    return;
+  }
+  // 序列过多时不渲染，仅清空，交由模板展示告警
+  if (tooManySeries.value) {
+    chartInstance.clear();
     return;
   }
   chartInstance.setOption(chartOption.value, true);
@@ -215,15 +225,23 @@ onUnmounted(() => {
       show-icon
       class="mb-2 flex-shrink-0"
     />
+    <Alert
+      v-else-if="tooManySeries"
+      type="warning"
+      :message="t('tsfile.chart.tooManySeries', { count: series.length, max: MAX_CHART_SERIES })"
+      :description="t('tsfile.chart.tooManySeriesDescription', { max: MAX_CHART_SERIES })"
+      show-icon
+      class="mb-2 flex-shrink-0"
+    />
 
     <Spin :spinning="loading">
       <div
-        v-show="!error && series.length > 0"
+        v-show="!error && !tooManySeries && series.length > 0"
         ref="chartRef"
         :style="{ width: '100%', height: chartHeight + 'px' }"
       ></div>
       <div
-        v-if="!loading && !error && series.length === 0"
+        v-if="!loading && !error && !tooManySeries && series.length === 0"
         class="flex items-center justify-center text-gray-500"
         :style="{ height: chartHeight + 'px' }"
       >

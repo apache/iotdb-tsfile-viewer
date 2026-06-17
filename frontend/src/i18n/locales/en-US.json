@@ -198,7 +198,10 @@
       "operatorLessEqual": "Less or Equal",
       "activeConditions": "Active Conditions",
       "noConditions": "No filter conditions set",
-      "maxConditionsReached": "Maximum 10 conditions allowed"
+      "maxConditionsReached": "Maximum 10 conditions allowed",
+      "searchColumn": "Search columns",
+      "columnsPerPage": "Columns/page",
+      "columns": "Columns"
     },
     "chart": {
       "title": "Chart Visualization",
@@ -228,7 +231,9 @@
       "totalPoints": "Total Points",
       "downsampledWarning": "Data Downsampled",
       "downsampledDescription": "Data has been automatically downsampled for performance. To view full data, narrow the time range or reduce measurements.",
-      "noData": "No chart data. Please select measurements and apply filters."
+      "noData": "No chart data. Please select measurements and apply filters.",
+      "tooManySeries": "Too many series to render ({count}; limit {max})",
+      "tooManySeriesDescription": "Drawing too many lines at once can freeze or crash the page. Reduce the selected fields/devices in the filter above to {max} series or fewer, then view the chart."
     },
     "scan": {
       "title": "File Scan",
