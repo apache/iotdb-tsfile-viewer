@@ -20,10 +20,12 @@
 package org.apache.tsfile.viewer.config;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -44,8 +46,18 @@ public class WebConfig implements WebMvcConfigurer {
    * Configure resource handlers for serving static frontend assets.
    *
    * <p>Maps /view/** requests to classpath:/static/view/ directory. Implements SPA routing by
-   * falling back to index.html for all non-existent resources (client-side routes). Enables caching
-   * with 1-hour cache period.
+   * falling back to index.html for all non-existent resources (client-side routes).
+   *
+   * <p>Caching strategy follows the standard hashed-SPA pattern:
+   *
+   * <ul>
+   *   <li>{@code /view/assets/**} — build output with content-hashed filenames (e.g. {@code
+   *       index-BXJsXIsM.js}). Safe to cache forever ({@code max-age=1y, immutable}); a content
+   *       change produces a new filename, so it can never go stale.
+   *   <li>{@code index.html} and SPA routes — the entry point that references those hashes. Served
+   *       {@code no-cache} (revalidate every load) so a new deployment is picked up immediately
+   *       instead of being masked by a cached entry point for up to the cache period.
+   * </ul>
    */
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -55,11 +67,17 @@ public class WebConfig implements WebMvcConfigurer {
         .addResourceLocations("classpath:/static/view/")
         .setCachePeriod(86400); // 24 hours cache
 
-    // Handle frontend SPA routes
+    // Content-hashed build assets: immutable, cache for a year.
+    registry
+        .addResourceHandler("/view/assets/**")
+        .addResourceLocations("classpath:/static/view/assets/")
+        .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
+
+    // Frontend SPA entry + client-side routes: always revalidate so deploys take effect at once.
     registry
         .addResourceHandler("/view", "/view/", "/view/**")
         .addResourceLocations("classpath:/static/view/")
-        .setCachePeriod(3600) // 1 hour cache
+        .setCacheControl(CacheControl.noCache())
         .resourceChain(true)
         .addResolver(
             new PathResourceResolver() {
