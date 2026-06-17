@@ -22,7 +22,7 @@
  * TableFilterPanel 组件 - 表模型筛选面板
  * 支持表选择、设备多选、字段多选、时间范围筛选、高级条件筛选
  */
-import type { AdvancedCondition, TsFileMetadata } from "@/api/tsfile/types";
+import type { AdvancedCondition, Table, TsFileMetadata } from "@/api/tsfile/types";
 
 import { computed, ref, watch } from "vue";
 
@@ -106,6 +106,18 @@ const measurementOptions = computed(() => {
 
 const numericTypes = new Set(['INT32', 'INT64', 'FLOAT', 'DOUBLE', 'BOOLEAN']);
 
+// 图表模式下默认展示的序列数上限（避免一次性绘制数千条折线导致页面卡死）
+const CHART_DEFAULT_SERIES = 8;
+
+// 取某张表前 N 个数值字段，作为图表默认序列
+function defaultChartMeasurements(table: Table | undefined): string[] {
+  if (!table) return [];
+  return table.fieldColumns
+    .filter((c) => c.name && numericTypes.has(c.dataType?.toUpperCase() || ''))
+    .map((c) => c.name)
+    .slice(0, CHART_DEFAULT_SERIES);
+}
+
 const measurementSelectOptions = computed(() => {
   if (!props.chartMode) {
     return measurementOptions.value.map((m) => ({ label: m, value: m }));
@@ -140,9 +152,8 @@ async function loadMetadata() {
         if (props.chartMode) {
           const table = metadata.value?.tables?.find((t) => t.tableName === firstTable.value);
           if (table) {
-            selectedMeasurements.value = table.fieldColumns
-              .filter((c) => c.name && numericTypes.has(c.dataType?.toUpperCase() || ''))
-              .map((c) => c.name);
+            // 默认仅展示前若干条数值序列，避免一次性绘制数千条折线
+            selectedMeasurements.value = defaultChartMeasurements(table);
             applyFilters();
           }
         }
@@ -213,14 +224,10 @@ function applyFilters() {
     filters.devices = selectedDevices.value;
   }
 
-  // In chart mode, auto-select all numeric fields if none selected
+  // In chart mode, default to the first few numeric fields if none selected
   if (props.chartMode && selectedMeasurements.value.length === 0 && selectedTable.value) {
     const table = metadata.value?.tables?.find((t) => t.tableName === selectedTable.value);
-    if (table) {
-      selectedMeasurements.value = table.fieldColumns
-        .filter((c) => c.name && numericTypes.has(c.dataType?.toUpperCase() || ''))
-        .map((c) => c.name);
-    }
+    selectedMeasurements.value = defaultChartMeasurements(table);
   }
 
   if (selectedMeasurements.value.length > 0) {

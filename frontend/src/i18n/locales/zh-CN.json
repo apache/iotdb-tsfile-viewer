@@ -198,7 +198,10 @@
       "operatorLessEqual": "小于等于",
       "activeConditions": "当前条件",
       "noConditions": "未设置筛选条件",
-      "maxConditionsReached": "最多支持 10 个条件"
+      "maxConditionsReached": "最多支持 10 个条件",
+      "searchColumn": "搜索字段列",
+      "columnsPerPage": "每页列数",
+      "columns": "字段列"
     },
     "chart": {
       "title": "图表可视化",
@@ -228,7 +231,9 @@
       "totalPoints": "数据点总数",
       "downsampledWarning": "数据已降采样",
       "downsampledDescription": "为保证性能，数据已自动降采样显示。如需查看完整数据，请缩小时间范围或减少测点数量。",
-      "noData": "暂无图表数据，请选择测点并应用筛选条件"
+      "noData": "暂无图表数据，请选择测点并应用筛选条件",
+      "tooManySeries": "序列过多，已暂停绘制（{count} 条，上限 {max} 条）",
+      "tooManySeriesDescription": "一次性绘制过多折线会导致页面卡顿甚至崩溃。请在上方筛选器中减少所选字段/设备，将序列数降到 {max} 条以内后再查看。"
     },
     "scan": {
       "title": "文件扫描",
