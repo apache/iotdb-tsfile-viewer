@@ -51,6 +51,8 @@
     "file": {
       "title": "文件选择",
       "browser": "文件浏览器",
+      "searchPlaceholder": "搜索已展开目录中的文件…",
+      "searchNoResult": "已展开目录中没有匹配的文件。搜索仅在已加载（展开过）的目录内进行，请先展开相应目录。",
       "selectFile": "选择文件",
       "uploadFile": "上传文件",
       "recentFiles": "最近访问",
@@ -168,6 +170,8 @@
       "applyFilters": "应用筛选",
       "resetFilters": "重置筛选",
       "timestamp": "时间戳",
+      "rawTimestamp": "原始时间戳",
+      "precisionNote": "时间戳按本地时区显示到毫秒；数据源可能为更高精度（微秒 / 纳秒），悬浮时间戳可查看完整的原始存储值。",
       "device": "设备",
       "exportCsv": "导出 CSV",
       "exportJson": "导出 JSON",

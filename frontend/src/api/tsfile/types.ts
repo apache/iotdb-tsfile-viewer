@@ -160,6 +160,11 @@ export interface FilterConditions {
 
 export interface DataRow {
   timestamp: number;
+  /**
+   * 时间戳的精确原始数字串。JSON.parse 会把 >2^53 的纳秒时间戳转成有损 double，
+   * 该字段在解析前从响应文本中原样保留，用于无损展示原始存储值。
+   */
+  timestampRaw?: string;
   device: string;
   measurements: Record<string, unknown>;
 }

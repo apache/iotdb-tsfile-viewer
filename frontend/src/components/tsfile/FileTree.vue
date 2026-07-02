@@ -24,12 +24,13 @@
  */
 import type { TreeNode } from "@/api/tsfile/types";
 
-import { h, onMounted, ref } from "vue";
+import { computed, h, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Spin, Tree } from "antdv-next";
+import { Alert, Input, Spin, Tree } from "antdv-next";
 
 import { fileApi } from "@/api/tsfile";
+import { encodeFileId } from "@/utils/fileId";
 
 const { t } = useI18n();
 
@@ -52,6 +53,90 @@ const expandedKeys = ref<string[]>([]);
 const loadingKeys = ref<Set<string>>(new Set());
 const loading = ref(false);
 const hasError = ref(false);
+const searchValue = ref("");
+
+// 虚拟滚动需要一个明确的像素高度；用 ResizeObserver 测量树区域可用高度，
+// 传给 <Tree :height>，antdv 检测到 height 后自动启用虚拟滚动，只渲染可视节点。
+const treeContainer = ref<HTMLElement | null>(null);
+const treeHeight = ref(400);
+let resizeObserver: ResizeObserver | null = null;
+
+// 搜索时自动展开命中节点的祖先路径。展开态在搜索期间由 expandedKeys 接管，
+// 清空搜索后恢复用户手动展开的状态。
+const manualExpandedKeys = ref<string[]>([]);
+
+/**
+ * 收集所有 title 命中搜索词的节点 key，及其祖先 key（用于自动展开）。
+ * 树是懒加载的：只在已加载（已展开过）的节点范围内匹配。
+ */
+function collectMatchedKeys(nodes: FlatNode[], keyword: string, ancestors: string[], out: Set<string>): boolean {
+  let anyMatch = false;
+  for (const node of nodes) {
+    const selfMatch = node.title.toLowerCase().includes(keyword);
+    let childMatch = false;
+    if (node.children && node.children.length > 0) {
+      childMatch = collectMatchedKeys(node.children, keyword, [...ancestors, node.key], out);
+    }
+    if (selfMatch || childMatch) {
+      // 命中节点的所有祖先都要展开才能看到它
+      for (const a of ancestors) out.add(a);
+      if (childMatch) out.add(node.key);
+      anyMatch = true;
+    }
+  }
+  return anyMatch;
+}
+
+const matchedKeys = computed<Set<string>>(() => {
+  const keyword = searchValue.value.trim().toLowerCase();
+  if (!keyword) return new Set();
+  const out = new Set<string>();
+  collectMatchedKeys(treeData.value, keyword, [], out);
+  return out;
+});
+
+/**
+ * 按搜索词把树裁剪为「命中节点 + 其祖先路径」的子树。
+ * 保留规则：节点自身 title 命中，或其后代中有命中项（祖先需保留以展示路径）。
+ */
+function filterTree(nodes: FlatNode[], keyword: string): FlatNode[] {
+  const result: FlatNode[] = [];
+  for (const node of nodes) {
+    const selfMatch = node.title.toLowerCase().includes(keyword);
+    const filteredChildren =
+      node.children && node.children.length > 0 ? filterTree(node.children, keyword) : [];
+    if (selfMatch || filteredChildren.length > 0) {
+      result.push({
+        ...node,
+        children: filteredChildren.length > 0 ? filteredChildren : node.children,
+      });
+    }
+  }
+  return result;
+}
+
+// 传给 <Tree> 的数据：无搜索词时是完整树，有搜索词时是裁剪后的子树。
+const displayTreeData = computed<FlatNode[]>(() => {
+  const keyword = searchValue.value.trim().toLowerCase();
+  if (!keyword) return treeData.value;
+  return filterTree(treeData.value, keyword);
+});
+
+// 有搜索词时用命中祖先集合展开树；无搜索词时使用用户手动展开的状态。
+function syncExpandedForSearch() {
+  const keyword = searchValue.value.trim();
+  if (keyword) {
+    expandedKeys.value = Array.from(matchedKeys.value);
+  } else {
+    expandedKeys.value = [...manualExpandedKeys.value];
+  }
+}
+
+function measureTreeHeight() {
+  if (treeContainer.value) {
+    treeHeight.value = Math.max(200, treeContainer.value.clientHeight);
+  }
+}
 
 function transformNode(node: TreeNode): FlatNode {
   const result: FlatNode = {
@@ -109,7 +194,12 @@ async function loadRootTree() {
  * 展开节点时加载子目录
  */
 async function handleExpand(keys: (string | number)[], info: { expanded: boolean; node: any }) {
-  expandedKeys.value = keys.map(k => String(k));
+  const stringKeys = keys.map(k => String(k));
+  expandedKeys.value = stringKeys;
+  // 记录用户手动展开的状态，供清空搜索后恢复
+  if (!searchValue.value.trim()) {
+    manualExpandedKeys.value = stringKeys;
+  }
 
   if (!info.expanded) return;
 
@@ -132,12 +222,15 @@ async function handleExpand(keys: (string | number)[], info: { expanded: boolean
   }
 }
 
+/**
+ * 将文件路径编码为 URL-safe 的 Base64 fileId，见 utils/fileId.ts。
+ */
 function handleSelect(_selectedKeys: (string | number)[], info: any) {
   const data = info.node;
   if (data.isDirectory) {
     emit("selectDirectory", data.path || data.key, data.title);
   } else {
-    const fileId = btoa(data.path || data.key);
+    const fileId = encodeFileId(data.path || data.key);
     emit("select", fileId, data.path || data.key, data.title);
   }
 }
@@ -148,38 +241,95 @@ function getNodeIconClass(node: any): string {
   return "i-mdi:file text-blue-500";
 }
 
+/**
+ * 渲染节点标题；搜索时把命中的关键词片段高亮显示。
+ */
 function renderTitle(node: any) {
+  const title = String(node.title);
+  const keyword = searchValue.value.trim();
+  let titleContent: any = title;
+
+  if (keyword) {
+    const lowerTitle = title.toLowerCase();
+    const idx = lowerTitle.indexOf(keyword.toLowerCase());
+    if (idx !== -1) {
+      const before = title.slice(0, idx);
+      const match = title.slice(idx, idx + keyword.length);
+      const after = title.slice(idx + keyword.length);
+      titleContent = [
+        before,
+        h("span", { class: "bg-yellow-200 text-yellow-900 rounded px-0.5" }, match),
+        after,
+      ];
+    }
+  }
+
   return h("span", { class: "inline-flex items-center gap-2" }, [
     h("span", { class: getNodeIconClass(node) }),
-    h("span", null, node.title),
+    h("span", null, titleContent),
   ]);
+}
+
+function handleSearch(value: string) {
+  searchValue.value = value;
+  syncExpandedForSearch();
 }
 
 onMounted(() => {
   loadRootTree();
+  if (treeContainer.value) {
+    measureTreeHeight();
+    resizeObserver = new ResizeObserver(() => measureTreeHeight());
+    resizeObserver.observe(treeContainer.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
 });
 </script>
 
 <template>
   <div class="file-tree">
-    <div class="mb-4">
-      <h3 class="text-lg font-semibold">{{ t("tsfile.file.browser") }}</h3>
+    <div class="mb-3 flex-shrink-0">
+      <h3 class="mb-2 text-lg font-semibold">{{ t("tsfile.file.browser") }}</h3>
+      <Input
+        :value="searchValue"
+        :placeholder="t('tsfile.file.searchPlaceholder')"
+        allow-clear
+        @update:value="handleSearch"
+      >
+        <template #prefix>
+          <span class="i-mdi:magnify text-gray-400" />
+        </template>
+      </Input>
     </div>
 
-    <Alert v-if="hasError" type="warning" :message="t('tsfile.file.loadTreeError')" show-icon class="mb-4" />
+    <Alert v-if="hasError" type="warning" :message="t('tsfile.file.loadTreeError')" show-icon class="mb-3 flex-shrink-0" />
 
-    <Spin :spinning="loading">
-      <Tree
-        v-if="treeData.length > 0"
-        :tree-data="treeData"
-        :expanded-keys="expandedKeys"
-        :selectable="true"
-        :title-render="renderTitle"
-        block-node
-        @expand="handleExpand"
-        @select="handleSelect"
-      />
-    </Spin>
+    <div ref="treeContainer" class="min-h-0 flex-1">
+      <Spin :spinning="loading">
+        <Tree
+          v-if="displayTreeData.length > 0"
+          :tree-data="displayTreeData"
+          :expanded-keys="expandedKeys"
+          :height="treeHeight"
+          :selectable="true"
+          :title-render="renderTitle"
+          block-node
+          @expand="handleExpand"
+          @select="handleSelect"
+        />
+        <div
+          v-else-if="searchValue.trim() && treeData.length > 0"
+          class="py-6 text-center text-gray-500"
+        >
+          <span class="i-mdi:file-search-outline mb-2 inline-block text-4xl text-gray-400 opacity-70" />
+          <p class="mx-2 text-sm leading-relaxed">{{ t("tsfile.file.searchNoResult") }}</p>
+        </div>
+      </Spin>
+    </div>
 
     <div v-if="!loading && !hasError && treeData.length === 0" class="py-6 text-center text-gray-500">
       <span class="i-mdi:folder-alert mb-2 inline-block text-4xl text-yellow-400 opacity-70" />
@@ -190,6 +340,9 @@ onMounted(() => {
 
 <style scoped>
 .file-tree {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   user-select: none;
 }
 </style>

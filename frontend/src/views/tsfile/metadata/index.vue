@@ -29,6 +29,7 @@ import MeasurementsTable from "@/components/tsfile/MeasurementsTable.vue";
 import RowGroupsTable from "@/components/tsfile/RowGroupsTable.vue";
 import TablesTable from "@/components/tsfile/TablesTable.vue";
 import { useFileStore } from "@/stores/tsfile/file";
+import { decodeFileId } from "@/utils/fileId";
 
 const route = useRoute();
 const router = useRouter();
@@ -44,7 +45,7 @@ const activeTab = ref("rowGroups");
 const displayFileName = computed(() => {
   if (fileStore.currentFileName) return fileStore.currentFileName;
   try {
-    const decoded = atob(fileId.value);
+    const decoded = decodeFileId(fileId.value);
     return decoded.split('/').pop() || fileId.value;
   } catch {
     return fileId.value;
@@ -104,7 +105,7 @@ function goBack() {
 }
 function goToQuickScan() {
   try {
-    const filePath = atob(fileId.value);
+    const filePath = decodeFileId(fileId.value);
     fileStore.setScanTarget(filePath, 'file', true);
     router.push('/tsfile/scan');
   } catch {

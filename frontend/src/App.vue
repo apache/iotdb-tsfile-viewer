@@ -82,7 +82,7 @@ function handleDirectorySelect(path: string, _name: string) {
             :collapsed-width="0"
             :theme="isDark ? 'dark' : 'light'"
           >
-            <div style="padding: 16px; overflow-y: auto; height: 100%;">
+            <div style="padding: 16px; overflow: hidden; height: 100%;">
               <FileTree @select="handleFileSelect" @select-directory="handleDirectorySelect" />
             </div>
           </LayoutSider>

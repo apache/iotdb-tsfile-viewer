@@ -28,6 +28,8 @@ import DataTable from "@/components/tsfile/DataTable.vue";
 import TableFilterPanel from "@/components/tsfile/TableFilterPanel.vue";
 import TreeFilterPanel from "@/components/tsfile/TreeFilterPanel.vue";
 import { useFileStore } from "@/stores/tsfile/file";
+import { normalizeToMs } from "@/utils/timestamp";
+import { decodeFileId } from "@/utils/fileId";
 
 const route = useRoute();
 const router = useRouter();
@@ -38,7 +40,7 @@ const fileId = computed(() => route.params.fileId as string);
 const displayFileName = computed(() => {
   if (fileStore.currentFileName) return fileStore.currentFileName;
   try {
-    const decoded = atob(fileId.value);
+    const decoded = decodeFileId(fileId.value);
     return decoded.split('/').pop() || fileId.value;
   } catch {
     return fileId.value;
@@ -151,7 +153,7 @@ function exportCSV() {
   const headers = ["Timestamp", "Device", ...measurementCols];
   const rows = dataRows.value.map((row) =>
     [
-      new Date(row.timestamp).toISOString(),
+      new Date(normalizeToMs(row.timestamp)).toISOString(),
       row.device,
       ...measurementCols.map((col) => row.measurements[col] ?? ""),
     ].join(","),
@@ -181,7 +183,7 @@ function goBack() {
 }
 function goToQuickScan() {
   try {
-    const filePath = atob(fileId.value);
+    const filePath = decodeFileId(fileId.value);
     fileStore.setScanTarget(filePath, 'file', true);
     router.push('/tsfile/scan');
   } catch {

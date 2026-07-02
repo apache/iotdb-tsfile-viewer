@@ -322,10 +322,15 @@ public class FileService {
       return path;
     }
 
-    // Try to decode fileId as base64-encoded path (server-side files)
+    // Try to decode fileId as base64-encoded path (server-side files).
+    // The frontend encodes paths as URL-safe base64 without padding so that
+    // non-Latin1 characters (e.g. Chinese) survive and the value is safe as a
+    // single-segment route parameter. getUrlDecoder() also accepts standard
+    // base64 alphabets that contain no '+' or '/', preserving backward
+    // compatibility with previously issued fileIds.
     String decodedPath;
     try {
-      byte[] decodedBytes = Base64.getDecoder().decode(fileId);
+      byte[] decodedBytes = Base64.getUrlDecoder().decode(fileId);
       decodedPath = new String(decodedBytes, StandardCharsets.UTF_8);
       logger.debug("Decoded fileId from base64: {} -> {}", fileId, decodedPath);
     } catch (IllegalArgumentException e) {
