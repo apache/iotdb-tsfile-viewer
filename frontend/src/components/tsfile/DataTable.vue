@@ -28,8 +28,10 @@ import type { TableColumnType } from "antdv-next";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Button, Card, Input, Pagination, Select, Spin, Table } from "antdv-next";
+import { Alert, Button, Card, Input, Pagination, Select, Spin, Table, Tooltip } from "antdv-next";
 import { DownloadOutlined } from "@antdv-next/icons";
+
+import { formatTimestamp } from "@/utils/timestamp";
 
 interface Props {
   data: DataRow[];
@@ -148,15 +150,16 @@ const columns = computed<TableColumnType[]>(() => {
     },
     {
       title: t("tsfile.data.device"),
-      dataIndex: "device",
-      key: "device",
+      dataIndex: "__device__",
+      key: "__device__",
       fixed: "left",
       width: 180,
       sorter: true,
     },
   ];
 
-  // 标签列（固定左侧）
+  // 标签列（固定左侧）—— tag 名可能与保留列同名（如 "device"），
+  // 固定"设备"列已改用保留 key "__device__" 避免冲突，此处 tag 列可安全使用原名。
   for (const tagCol of props.tagColumns) {
     cols.push({
       title: tagCol,
@@ -195,7 +198,8 @@ const tableData = computed(() => {
     const flatRow: Record<string, unknown> = {
       _key: `${row.timestamp}-${row.device}-${index}`,
       timestamp: row.timestamp,
-      device: row.device,
+      timestampRaw: row.timestampRaw,
+      __device__: row.device,
     };
     for (const measurement of visibleMeasurements) {
       flatRow[measurement] = formatValue(row.measurements[measurement]);
@@ -263,13 +267,7 @@ function handleTableChange(
   }
 }
 
-// 格式化时间戳（含毫秒）
-function formatTimestamp(timestamp: number): string {
-  const d = new Date(timestamp);
-  const pad = (n: number, len = 2) => String(n).padStart(len, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
-}
-
+// 将不同精度的时间戳归一到毫秒并格式化，见 utils/timestamp.ts
 // 格式化值
 function formatValue(value: unknown): number | string {
   if (value === null || value === undefined) return "-";
@@ -348,6 +346,16 @@ function formatValue(value: unknown): number | string {
       />
     </div>
 
+    <!-- 时间戳精度说明 -->
+    <Alert
+      v-if="!error"
+      type="info"
+      show-icon
+      :message="t('tsfile.data.precisionNote')"
+      class="mb-3"
+      banner
+    />
+
     <!-- 数据表格 -->
     <Table
       v-if="!error"
@@ -362,13 +370,15 @@ function formatValue(value: unknown): number | string {
       row-key="_key"
       @change="handleTableChange"
     >
-      <template #bodyCell="{ column, text }">
+      <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'timestamp'">
-          <span class="font-mono text-xs">
-            {{ formatTimestamp(text as number) }}
-          </span>
+          <Tooltip :title="`${t('tsfile.data.rawTimestamp')}: ${record.timestampRaw ?? text}`">
+            <span class="font-mono text-xs timestamp-cell">
+              {{ formatTimestamp(text as number) }}
+            </span>
+          </Tooltip>
         </template>
-        <template v-else-if="column.key === 'device'">
+        <template v-else-if="column.key === '__device__'">
           <span class="font-medium">{{ text }}</span>
         </template>
         <template v-else>
@@ -412,3 +422,11 @@ function formatValue(value: unknown): number | string {
     </div>
   </Card>
 </template>
+
+<style scoped>
+/* 时间戳单元格：虚线下划线提示悬浮可查看原始存储值 */
+.timestamp-cell {
+  border-bottom: 1px dotted var(--ant-color-border, #bbb);
+  cursor: help;
+}
+</style>

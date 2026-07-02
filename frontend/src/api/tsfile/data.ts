@@ -28,7 +28,29 @@ import type {
 import { apiClient } from "../request";
 
 export function previewData(request: DataPreviewRequest) {
-  return apiClient.post<unknown, DataPreviewResponse>("/data/preview", request);
+  return apiClient.post<unknown, DataPreviewResponse>("/data/preview", request, {
+    // 保留时间戳原始精度：JSON.parse 会把 >2^53 的纳秒时间戳转成有损 double，
+    // 因此在解析前把每个 timestamp 的精确数字串旁挂为 timestampRaw 字符串字段。
+    // 仅作用于本接口，避免影响其它响应。
+    transformResponse: [
+      (raw: unknown) => {
+        if (typeof raw !== "string") return raw;
+        try {
+          const patched = raw.replace(
+            /"timestamp"\s*:\s*(-?\d+)/g,
+            '"timestampRaw":"$1","timestamp":$1',
+          );
+          return JSON.parse(patched);
+        } catch {
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return raw;
+          }
+        }
+      },
+    ],
+  });
 }
 
 export function queryTableData(request: TableDataRequest) {

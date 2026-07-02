@@ -51,6 +51,8 @@
     "file": {
       "title": "File Selection",
       "browser": "File Browser",
+      "searchPlaceholder": "Search files in expanded folders…",
+      "searchNoResult": "No matching files in expanded folders. Search only covers folders that have been loaded (expanded); please expand the relevant folders first.",
       "selectFile": "Select File",
       "uploadFile": "Upload File",
       "recentFiles": "Recent Files",
@@ -168,6 +170,8 @@
       "applyFilters": "Apply Filters",
       "resetFilters": "Reset Filters",
       "timestamp": "Timestamp",
+      "rawTimestamp": "Raw timestamp",
+      "precisionNote": "Timestamps are displayed to millisecond precision in the local timezone; the source may have higher resolution (microsecond / nanosecond). Hover a timestamp to see the full original stored value.",
       "device": "Device",
       "exportCsv": "Export CSV",
       "exportJson": "Export JSON",
