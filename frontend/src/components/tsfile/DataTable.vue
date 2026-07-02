@@ -25,10 +25,10 @@
 import type { DataRow } from "@/api/tsfile/types";
 import type { TableColumnType } from "antdv-next";
 
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Button, Card, Input, Pagination, Select, Spin, Table, Tooltip } from "antdv-next";
+import { Alert, Button, Card, Input, Pagination, Select, Table, Tooltip } from "antdv-next";
 import { DownloadOutlined } from "@antdv-next/icons";
 
 import { formatTimestamp } from "@/utils/timestamp";
@@ -185,11 +185,52 @@ const columns = computed<TableColumnType[]>(() => {
   return cols;
 });
 
-// 表格横向滚动宽度（用于虚拟滚动，需为数字）
+// 表格横向滚动宽度（固定列 + 当前可见字段列，撑出横向滚动条）
 const scrollX = computed(() => {
   const fixedWidth = 210 + 180 + props.tagColumns.length * 120;
   return fixedWidth + visibleFieldColumns.value.length * 120;
 });
+
+// 表格纵向可视高度：用 ResizeObserver 实测表格外层容器的可用高度，
+// 避免用写死常量手算上方元素（列控制条 / 精度说明 Alert / 分页）的高度——
+// 上方任意增删元素时，虚拟滚动的 scroll.y 都能自适应，不再错位。
+const tableWrapper = ref<HTMLElement | null>(null);
+const tableBodyHeight = ref(400);
+let resizeObserver: ResizeObserver | null = null;
+// 表头 DOM 未就绪时的兜底预留高度（表头 + 横向滚动条 + 边框）
+const HEADER_RESERVE_FALLBACK = 64;
+// 横向滚动条 + 底部边框额外预留，避免 body 覆盖到下方分页
+const SCROLLBAR_RESERVE = 16;
+
+function measureTableHeight() {
+  const el = tableWrapper.value;
+  if (!el) return;
+  // 优先实测真实表头高度（适配 size / 多行表头 / 字体变化），拿不到则用兜底值
+  const headerEl = el.querySelector<HTMLElement>(".ant-table-header, thead");
+  const reserve = (headerEl?.offsetHeight || HEADER_RESERVE_FALLBACK) + SCROLLBAR_RESERVE;
+  const h = el.clientHeight - reserve;
+  tableBodyHeight.value = Math.max(120, Math.floor(h));
+}
+
+onMounted(() => {
+  measureTableHeight();
+  if (typeof ResizeObserver !== "undefined" && tableWrapper.value) {
+    resizeObserver = new ResizeObserver(() => measureTableHeight());
+    resizeObserver.observe(tableWrapper.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+});
+
+// loading 结束 / 数据变化后，表头与上下方控制条、分页的显隐会改变，
+// 等 DOM 更新后重新实测表头高度，确保 body 高度精确、不覆盖分页。
+watch(
+  () => [props.loading, props.data.length, props.total] as const,
+  () => nextTick(measureTableHeight),
+);
 
 // 表格数据（扁平化）—— 仅展开当前可见列，避免每行生成数千个属性
 const tableData = computed(() => {
@@ -356,14 +397,14 @@ function formatValue(value: unknown): number | string {
       banner
     />
 
-    <!-- 数据表格 -->
+    <!-- 数据表格 —— 外层 wrapper 撑满剩余空间，实测其高度供虚拟滚动使用 -->
+    <div v-if="!error" ref="tableWrapper" class="flex-1 min-h-0">
     <Table
-      v-if="!error"
       :columns="columns"
       :data-source="tableData"
       :loading="loading"
       :pagination="false"
-      :scroll="{ x: scrollX, y: 480 }"
+      :scroll="{ x: scrollX, y: tableBodyHeight }"
       :virtual="true"
       bordered
       size="middle"
@@ -388,6 +429,7 @@ function formatValue(value: unknown): number | string {
         </template>
       </template>
     </Table>
+    </div>
 
     <!-- 分页 -->
     <div v-if="!loading && total > 0" class="mt-4 flex items-center justify-between border-t pt-4">
@@ -424,6 +466,14 @@ function formatValue(value: unknown): number | string {
 </template>
 
 <style scoped>
+/* Card 内容区撑满并成为 flex 列容器，使表格 wrapper 的 flex-1 能拿到真实剩余高度 */
+.data-table :deep(.ant-card-body) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* 时间戳单元格：虚线下划线提示悬浮可查看原始存储值 */
 .timestamp-cell {
   border-bottom: 1px dotted var(--ant-color-border, #bbb);
