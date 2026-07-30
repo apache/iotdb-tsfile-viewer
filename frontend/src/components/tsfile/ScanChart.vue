@@ -28,7 +28,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch, shallowRef } from "vu
 import * as echarts from "echarts";
 import { useI18n } from "vue-i18n";
 import { useScanStore } from "@/stores/tsfile/scan";
-import { getChartStyle } from "@/theme/charts";
+import { getChartStyle, CHART_COLORS } from "@/theme/charts";
 import { useTheme } from "@/composables/useTheme";
 
 const { t } = useI18n();
@@ -129,7 +129,7 @@ function renderBar(data: ChartDataItem[]) {
       name: t("tsfile.scan.fileCount"),
       minInterval: 1,
     },
-    series: [{ name: t("tsfile.scan.fileCount"), type: "bar", data: values, itemStyle: { color: "#1677ff" }, barMaxWidth: 40 }],
+    series: [{ name: t("tsfile.scan.fileCount"), type: "bar", data: values, itemStyle: { color: CHART_COLORS[0] }, barMaxWidth: 40 }],
   }, true);
 
   barChart.value.off("click");
