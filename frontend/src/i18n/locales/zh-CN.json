@@ -247,6 +247,8 @@
       "fileScan": "单文件扫描",
       "directoryPlaceholder": "请输入要扫描的目录路径...",
       "sidebarHint": "提示：点击左侧目录树中的文件夹可自动填入路径",
+      "idleTitle": "尚未开始扫描",
+      "idleHint": "从左侧文件树选择一个目录或 TsFile 文件，或在上方直接输入路径，然后点击「开始扫描」。",
       "filePlaceholder": "请输入要检测的 TsFile 文件路径...",
       "quickScan": "快速扫描",
       "startScan": "开始扫描",

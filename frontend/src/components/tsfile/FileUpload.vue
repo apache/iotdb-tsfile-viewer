@@ -20,18 +20,19 @@
 <script setup lang="ts">
 /**
  * FileUpload 组件 - 文件上传
- * 使用 antdv-next Upload 组件实现拖拽上传
+ * 使用 Element Plus el-upload 组件实现拖拽上传
  */
-import type { UploadProps } from "antdv-next";
+import type { UploadRequestOptions } from "element-plus";
 import type { UploadResponse } from "@/api/tsfile/types";
 
-type CustomRequestOptions = Parameters<NonNullable<UploadProps["customRequest"]>>[0];
+// element-plus 未从公开入口导出 UploadAjaxError 类型，这里通过 onError 回调的参数类型间接推导
+type UploadErrorArg = Parameters<NonNullable<UploadRequestOptions["onError"]>>[0];
 
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Card, Progress, UploadDragger } from "antdv-next";
-import { CloudUploadOutlined, LoadingOutlined } from "@antdv-next/icons";
+import { ElMessage } from "element-plus";
+import { CloudUpload, Loader2 } from "lucide-vue-next";
 
 import { fileApi } from "@/api/tsfile";
 import { useFileStore } from "@/stores/tsfile/file";
@@ -67,7 +68,7 @@ function beforeUpload(file: File): boolean {
 /**
  * 自定义上传处理
  */
-async function customRequest(options: CustomRequestOptions) {
+async function httpRequest(options: UploadRequestOptions) {
   uploading.value = true;
   progress.value = 0;
 
@@ -80,6 +81,7 @@ async function customRequest(options: CustomRequestOptions) {
     progress.value = 100;
     success.value = true;
     options.onSuccess?.(data);
+    ElMessage.success(t("tsfile.file.uploadSuccess"));
 
     emit("uploaded", data.fileId, data.fileName, data.fileSize);
 
@@ -101,7 +103,8 @@ async function customRequest(options: CustomRequestOptions) {
     const message = error_ instanceof Error ? error_.message : "Upload failed";
     error.value =
       (error_ as { response?: { data?: { message?: string } } }).response?.data?.message || message;
-    options.onError?.(error_ instanceof Error ? error_ : new Error(message));
+    ElMessage.error(error.value);
+    options.onError?.((error_ instanceof Error ? error_ : new Error(message)) as UploadErrorArg);
   } finally {
     uploading.value = false;
   }
@@ -109,52 +112,55 @@ async function customRequest(options: CustomRequestOptions) {
 </script>
 
 <template>
-  <Card class="file-upload">
-    <template #title>
-      <span class="font-semibold">{{ t("tsfile.file.uploadFile") }}</span>
-    </template>
+  <div class="tc-panel file-upload">
+    <div class="tc-panel-title">
+      <span>{{ t("tsfile.file.uploadFile") }}</span>
+    </div>
+    <div class="p-5">
+      <el-upload
+        drag
+        :show-file-list="false"
+        :before-upload="beforeUpload"
+        :http-request="httpRequest"
+        accept=".tsfile"
+        :disabled="uploading"
+      >
+        <div v-if="!uploading" class="upload-content">
+          <CloudUpload class="upload-icon" :size="48" />
+          <p class="upload-title text-text-heading">{{ t("tsfile.file.dragDrop") }}</p>
+          <p class="upload-hint text-text-label">{{ t("tsfile.file.selectTsFile") }}</p>
+        </div>
 
-    <UploadDragger
-      :show-upload-list="false"
-      :before-upload="beforeUpload"
-      :custom-request="customRequest"
-      accept=".tsfile"
-      :disabled="uploading"
-    >
-      <div v-if="!uploading" class="upload-content">
-        <CloudUploadOutlined class="upload-icon" />
-        <p class="upload-title">{{ t("tsfile.file.dragDrop") }}</p>
-        <p class="upload-hint">{{ t("tsfile.file.selectTsFile") }}</p>
-      </div>
+        <div v-else class="upload-content">
+          <Loader2 class="upload-icon uploading animate-spin" :size="48" />
+          <p class="upload-title text-text-heading">{{ t("tsfile.common.loading") }}</p>
+          <el-progress :percentage="progress" :stroke-width="8" class="upload-progress" />
+        </div>
+      </el-upload>
 
-      <div v-else class="upload-content">
-        <LoadingOutlined class="upload-icon uploading" spin />
-        <p class="upload-title">{{ t("tsfile.common.loading") }}</p>
-        <Progress :percent="progress" :stroke-width="8" class="upload-progress" />
-      </div>
-    </UploadDragger>
+      <!-- 错误提示 -->
+      <el-alert
+        v-if="error"
+        type="error"
+        :title="t('tsfile.file.uploadFailed')"
+        show-icon
+        closable
+        class="upload-alert"
+        @close="error = null"
+      >
+        {{ error }}
+      </el-alert>
 
-    <!-- 错误提示 -->
-    <Alert
-      v-if="error"
-      type="error"
-      :message="t('tsfile.file.uploadFailed')"
-      :description="error"
-      show-icon
-      closable
-      class="upload-alert"
-      @close="error = null"
-    />
-
-    <!-- 成功提示 -->
-    <Alert
-      v-if="success"
-      type="success"
-      :message="t('tsfile.file.uploadSuccess')"
-      show-icon
-      class="upload-alert"
-    />
-  </Card>
+      <!-- 成功提示 -->
+      <el-alert
+        v-if="success"
+        type="success"
+        :title="t('tsfile.file.uploadSuccess')"
+        show-icon
+        class="upload-alert"
+      />
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -167,13 +173,12 @@ async function customRequest(options: CustomRequestOptions) {
 }
 
 .upload-icon {
-  font-size: 3rem;
-  color: #999;
   margin-bottom: 1rem;
+  color: var(--text-label);
 }
 
 .upload-icon.uploading {
-  color: var(--ant-color-primary, #1677ff);
+  color: var(--primary);
 }
 
 .upload-title {
@@ -184,7 +189,6 @@ async function customRequest(options: CustomRequestOptions) {
 .upload-hint {
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  color: #999;
 }
 
 .upload-progress {

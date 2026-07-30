@@ -26,8 +26,7 @@ import type { AdvancedCondition, ComparisonOperator, LogicalOperator } from "@/a
 
 import { computed, ref, watch } from "vue";
 
-import { Button, Input, Modal, Select, Tag } from "antdv-next";
-import { DeleteOutlined, PlusOutlined } from "@antdv-next/icons";
+import { Trash2, Plus } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
 
 interface Props {
@@ -129,15 +128,16 @@ function clearAll() {
 </script>
 
 <template>
-  <Modal
-    :open="open"
+  <el-dialog
+    :model-value="open"
     :title="t('tsfile.data.advancedFilterTitle')"
-    :width="700"
-    @cancel="handleCancel"
+    width="700"
+    @update:model-value="emit('update:open', $event)"
+    @close="handleCancel"
   >
     <div class="space-y-4">
       <!-- 说明 -->
-      <p class="text-sm text-gray-500">
+      <p class="text-sm text-text-label">
         {{ t("tsfile.data.advancedFilterDesc") }}
       </p>
 
@@ -146,91 +146,100 @@ function clearAll() {
         <div
           v-for="(condition, index) in internalConditions"
           :key="condition.id"
-          class="flex items-center gap-2 rounded-lg border bg-gray-50 p-3 dark:bg-gray-800"
+          class="flex items-center gap-2 rounded-lg border border-border-default bg-bg-subtle p-3"
         >
           <!-- 字段选择 -->
-          <Select
-            v-model:value="condition.field"
+          <el-select
+            v-model="condition.field"
             :placeholder="t('tsfile.data.selectField')"
-            :options="fieldOptions"
-            show-search
+            filterable
             class="w-40"
             size="small"
-          />
+          >
+            <el-option
+              v-for="fieldOption in fieldOptions"
+              :key="fieldOption.value"
+              :label="fieldOption.label"
+              :value="fieldOption.value"
+            />
+          </el-select>
 
           <!-- 运算符选择 -->
-          <Select
-            v-model:value="condition.operator"
-            :placeholder="t('tsfile.data.selectOperator')"
-            :options="operatorOptions"
-            class="w-32"
-            size="small"
-          />
+          <el-select v-model="condition.operator" :placeholder="t('tsfile.data.selectOperator')" class="w-32" size="small">
+            <el-option
+              v-for="operatorOption in operatorOptions"
+              :key="operatorOption.value"
+              :label="operatorOption.label"
+              :value="operatorOption.value"
+            />
+          </el-select>
 
           <!-- 值输入 -->
-          <Input
-            :value="String(condition.value)"
+          <el-input
+            :model-value="String(condition.value)"
             :placeholder="t('tsfile.data.enterValue')"
             class="w-32"
             size="small"
-            @update:value="condition.value = $event"
+            @update:model-value="condition.value = $event"
           />
 
           <!-- 逻辑运算符（非最后一个条件时显示） -->
-          <Select
+          <el-select
             v-if="index < internalConditions.length - 1"
-            v-model:value="condition.logic"
-            :options="logicOptions"
+            v-model="condition.logic"
             class="w-20"
             size="small"
-          />
+          >
+            <el-option
+              v-for="logicOption in logicOptions"
+              :key="logicOption.value"
+              :label="logicOption.label"
+              :value="logicOption.value"
+            />
+          </el-select>
           <div v-else class="w-20" />
 
           <!-- 删除按钮 -->
-          <Button type="text" danger shape="circle" size="small" @click="removeCondition(index)">
-            <template #icon>
-              <DeleteOutlined />
-            </template>
-          </Button>
+          <el-button link type="danger" circle size="small" @click="removeCondition(index)">
+            <Trash2 :size="16" />
+          </el-button>
         </div>
       </div>
 
       <!-- 空状态 -->
-      <div v-else class="rounded-lg border-2 border-dashed py-8 text-center text-gray-500">
+      <div v-else class="rounded-lg border-2 border-dashed border-border-default py-8 text-center text-text-label">
         {{ t("tsfile.data.noConditions") }}
       </div>
 
       <!-- 添加条件按钮 -->
       <div class="flex items-center justify-between">
-        <Button :disabled="!canAddMore" type="dashed" size="small" @click="addCondition">
-          <template #icon>
-            <PlusOutlined />
-          </template>
+        <el-button :disabled="!canAddMore" plain size="small" @click="addCondition">
+          <Plus :size="16" class="mr-1" />
           {{ t("tsfile.data.addCondition") }}
-        </Button>
+        </el-button>
 
-        <Tag v-if="!canAddMore" color="warning">
+        <el-tag v-if="!canAddMore" type="warning">
           {{ t("tsfile.data.maxConditionsReached") }}
-        </Tag>
+        </el-tag>
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-between">
-        <Button v-if="internalConditions.length > 0" danger @click="clearAll">
+        <el-button v-if="internalConditions.length > 0" type="danger" @click="clearAll">
           {{ t("tsfile.common.clear") }}
-        </Button>
+        </el-button>
         <div v-else />
 
         <div class="flex gap-2">
-          <Button @click="handleCancel">
+          <el-button @click="handleCancel">
             {{ t("tsfile.common.cancel") }}
-          </Button>
-          <Button type="primary" @click="handleApply">
+          </el-button>
+          <el-button type="primary" @click="handleApply">
             {{ t("tsfile.common.apply") }}
-          </Button>
+          </el-button>
         </div>
       </div>
     </template>
-  </Modal>
+  </el-dialog>
 </template>

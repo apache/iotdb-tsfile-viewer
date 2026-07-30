@@ -27,8 +27,6 @@ import type { TsFileMetadata } from "@/api/tsfile/types";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Card, Descriptions, Spin, Tag } from "antdv-next";
-
 interface Props {
   metadata: TsFileMetadata | null;
   loading?: boolean;
@@ -49,7 +47,9 @@ const isTableModel = computed(() => {
 });
 
 const modelTypeLabel = computed(() => {
-  return isTableModel.value ? t("tsfile.metadata.tableModel") : t("tsfile.metadata.treeModel");
+  return isTableModel.value
+    ? t("tsfile.metadata.tableModel")
+    : t("tsfile.metadata.treeModel");
 });
 
 const items = computed(() => {
@@ -64,7 +64,7 @@ const items = computed(() => {
     {
       key: "timeRange",
       label: t("tsfile.metadata.timeRange"),
-      content: `${formatTime(props.metadata!.timeRange.startTime)} → ${formatTime(props.metadata!.timeRange.endTime)}`,
+      content: `${formatTime(props.metadata.timeRange.startTime)} → ${formatTime(props.metadata.timeRange.endTime)}`,
     },
   ];
 
@@ -99,22 +99,27 @@ const items = computed(() => {
 </script>
 
 <template>
-  <Card>
-    <template #title>
-      <div class="flex items-center justify-between">
-        <span class="font-semibold">{{ t("tsfile.metadata.basicInfo") }}</span>
-        <Tag v-if="metadata" :color="isTableModel ? 'success' : 'processing'">
-          {{ modelTypeLabel }}
-        </Tag>
-      </div>
-    </template>
+  <div class="tc-panel">
+    <div class="tc-panel-title">
+      <span>{{ t("tsfile.metadata.basicInfo") }}</span>
+      <!-- 旧组件库的 color="processing" 是其特有语义色，Element Plus 用 primary 代替 -->
+      <el-tag v-if="metadata" :type="isTableModel ? 'success' : 'primary'" size="small">
+        {{ modelTypeLabel }}
+      </el-tag>
+    </div>
 
-    <Spin :spinning="loading">
-      <Descriptions v-if="metadata" :items="items" :column="2" bordered />
+    <div v-loading="loading" class="p-5">
+      <el-descriptions v-if="metadata" :column="2" border>
+        <el-descriptions-item
+          v-for="item in items"
+          :key="item.key"
+          :label="item.label"
+        >
+          <span class="tnum">{{ item.content }}</span>
+        </el-descriptions-item>
+      </el-descriptions>
 
-      <div v-else class="py-8 text-center text-gray-500">
-        {{ t("tsfile.common.noData") }}
-      </div>
-    </Spin>
-  </Card>
+      <el-empty v-else :description="t('tsfile.common.noData')" :image-size="72" />
+    </div>
+  </div>
 </template>

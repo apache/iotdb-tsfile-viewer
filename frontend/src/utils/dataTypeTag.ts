@@ -17,16 +17,27 @@
  * under the License.
  */
 
-import { presetAntdTailwind4 } from "@antdv-next/unocss";
-import { defineConfig, presetIcons, presetWind } from "unocss";
+import type { TagProps } from "element-plus";
 
-export default defineConfig({
-  presets: [
-    presetWind(),
-    presetIcons({
-      scale: 1.2,
-      warn: true,
-    }),
-    presetAntdTailwind4(),
-  ],
-});
+/**
+ * TsFile 数据类型 → 标签配色。
+ *
+ * 旧组件库用的是 blue/green/orange/cyan 这类预设色名，Element Plus 只有
+ * primary/success/warning/danger/info 五种语义类型，这里做一次归并：
+ * 整型走 primary、浮点走 success、布尔走 warning、字符串类走 info。
+ *
+ * MeasurementsTable 与 TablesTable 必须保持一致，因此集中在这里。
+ */
+const DATA_TYPE_TAG_TYPE: Record<string, TagProps["type"]> = {
+  INT32: "primary",
+  INT64: "primary",
+  FLOAT: "success",
+  DOUBLE: "success",
+  BOOLEAN: "warning",
+  TEXT: "info",
+  STRING: "info",
+};
+
+export function getDataTypeTagType(dataType: string): TagProps["type"] {
+  return DATA_TYPE_TAG_TYPE[dataType] ?? "info";
+}

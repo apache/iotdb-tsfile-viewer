@@ -1,0 +1,98 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/**
+ * 设计规范 token —— 亮/暗两套语义变量。
+ *
+ * 这里是唯一的取值来源：Tailwind 的语义色、`src/styles/index.css` 的
+ * 组件类以及 ECharts 主题都从这些变量取值，切换主题只需在
+ * <html> 上增删 `dark` class。
+ */
+
+:root {
+  /* 主色 */
+  --primary: #495ad4;
+  --primary-hover: #3c4ab0;
+  --primary-deep: #2f3a8a;
+  --primary-light: #bfc6f0;
+
+  /* 背景 */
+  --bg-app: #ffffff;
+  --bg-card: #ffffff;
+  --bg-subtle: #f7f8fc;
+
+  /* 文字 */
+  --text-heading: #061b31;
+  --text-label: #273951;
+  --text-body: #64748d;
+
+  /* 描边 */
+  --border-default: #e5edf5;
+
+  /* 状态色 */
+  --success: #67c23a;
+  --warning: #e6a23c;
+  --danger: #f56c6c;
+  --info: #909399;
+
+  /* 圆角 */
+  --radius-control: 0.25rem;
+  --radius-card: 0.5rem;
+
+  /* 阴影
+   *
+   * 亮色下 --bg-app 与 --bg-card 都是纯白，只靠 1px 描边分不出层级，单层
+   * 大范围低透明度阴影几乎看不见。这里改成「近距离贴边 + 中距离 + 远距离
+   * 环境光」三层，颜色取海军蓝而不是纯黑，保持低对比但能看出浮起。 */
+  --shadow-ambient:
+    rgba(23, 43, 77, 0.06) 0 1px 2px 0, rgba(23, 43, 77, 0.06) 0 6px 14px -6px,
+    rgba(23, 43, 77, 0.08) 0 15px 35px -12px;
+  --shadow-card:
+    rgba(50, 50, 93, 0.25) 0 30px 45px -30px, rgba(0, 0, 0, 0.1) 0 18px 36px -18px;
+
+  /* 字体 */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+  --font-mono: "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+/* 暗色：深海军蓝基调 */
+.dark {
+  --primary: #7482e6;
+  --primary-hover: #8e99eb;
+  --primary-deep: #2f3a8a;
+  --primary-light: #3b4678;
+
+  --bg-app: #0d253d;
+  --bg-card: #141c2e;
+  --bg-subtle: #182131;
+
+  --text-heading: #ffffff;
+  --text-label: #cbd5e1;
+  --text-body: #94a3b8;
+
+  --border-default: #1e2940;
+
+  --shadow-ambient:
+    rgba(0, 0, 0, 0.28) 0 1px 2px 0, rgba(0, 0, 0, 0.3) 0 6px 14px -6px,
+    rgba(0, 0, 0, 0.35) 0 15px 35px -12px;
+  --shadow-card:
+    rgba(0, 0, 0, 0.6) 0 30px 45px -30px, rgba(0, 0, 0, 0.4) 0 18px 36px -18px;
+}

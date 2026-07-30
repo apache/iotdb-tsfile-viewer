@@ -26,15 +26,12 @@ import type { AdvancedCondition, Table, TsFileMetadata } from "@/api/tsfile/type
 
 import { computed, ref, watch } from "vue";
 
-import { Button, DatePicker, Select, Spin, Tag } from "antdv-next";
-import { FilterOutlined, ReloadOutlined, SearchOutlined } from "@antdv-next/icons";
 import dayjs from "dayjs";
 import { useI18n } from "vue-i18n";
+import { Filter, RotateCcw, Search } from "lucide-vue-next";
 
 import { metaApi } from "@/api/tsfile";
 import AdvancedFilterDialog from "@/components/tsfile/AdvancedFilterDialog.vue";
-
-const RangePicker = DatePicker.RangePicker;
 
 interface Props {
   fileId: string;
@@ -57,9 +54,7 @@ const metadata = ref<null | TsFileMetadata>(null);
 const selectedTable = ref<string | undefined>(undefined);
 const selectedDevices = ref<string[]>([]);
 const selectedMeasurements = ref<string[]>([]);
-// Use `any` for RangePicker value type to avoid dayjs v1/v2 type conflict
-// (antdv-next internally uses dayjs v1, project uses dayjs v2)
-const timeRange = ref<any>(null);
+const timeRange = ref<[Date, Date] | null>(null);
 
 // 快捷时间范围
 const quickTimeRanges = computed(() => [
@@ -120,7 +115,7 @@ function defaultChartMeasurements(table: Table | undefined): string[] {
 
 const measurementSelectOptions = computed(() => {
   if (!props.chartMode) {
-    return measurementOptions.value.map((m) => ({ label: m, value: m }));
+    return measurementOptions.value.map((m) => ({ label: m, value: m, disabled: false }));
   }
   // In chart mode, disable non-numeric fields
   const table = metadata.value?.tables?.find((t) => t.tableName === selectedTable.value);
@@ -169,9 +164,9 @@ async function loadMetadata() {
 const fileStartTime = computed(() => metadata.value?.timeRange?.startTime);
 const fileEndTime = computed(() => metadata.value?.timeRange?.endTime);
 
-function disabledDate(current: any) {
+function disabledDate(current: Date) {
   if (!current) return false;
-  const ts = current.valueOf();
+  const ts = dayjs(current).valueOf();
   if (fileStartTime.value != null && ts < dayjs(fileStartTime.value).subtract(1, 'day').startOf('day').valueOf()) return true;
   if (fileEndTime.value != null && ts > dayjs(fileEndTime.value).add(1, 'day').endOf('day').valueOf()) return true;
   return false;
@@ -209,7 +204,7 @@ function selectQuickTimeRange(range: string) {
     }
   }
 
-  timeRange.value = [startTime, now];
+  timeRange.value = [startTime.toDate(), now.toDate()];
 }
 
 // 应用筛选
@@ -294,64 +289,67 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
 </script>
 
 <template>
-  <div
-    class="table-filter-panel rounded-lg border border-solid border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-  >
-    <!-- 加载状态 -->
-    <div v-if="loading" class="flex items-center justify-center py-4">
-      <Spin />
-      <span class="ml-2 text-sm text-gray-500">{{ t("tsfile.common.loading") }}</span>
-    </div>
-
+  <div class="tc-panel table-filter-panel p-4">
     <!-- 错误状态 -->
-    <div v-else-if="error" class="text-center text-red-500">
+    <div v-if="error" class="py-4 text-center text-danger">
       {{ error }}
     </div>
 
     <!-- 筛选表单 -->
-    <div v-else class="space-y-4">
+    <div v-else v-loading="loading" class="space-y-4">
       <!-- 第一行：表/设备/字段选择 -->
       <div class="flex flex-wrap items-center gap-4">
         <!-- 表选择 -->
         <div class="flex items-center gap-2">
-          <span class="whitespace-nowrap text-sm"> {{ t("tsfile.data.selectTable") }}: </span>
-          <Select
-            v-model:value="selectedTable"
+          <span class="whitespace-nowrap text-sm text-text-body"> {{ t("tsfile.data.selectTable") }}: </span>
+          <el-select
+            v-model="selectedTable"
             :placeholder="t('tsfile.data.selectTablePlaceholder')"
-            :options="tableOptions"
-            show-search
+            filterable
             style="width: 192px"
-          />
+          >
+            <el-option v-for="opt in tableOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
         </div>
 
         <!-- 设备多选 -->
         <div class="flex items-center gap-2">
-          <span class="whitespace-nowrap text-sm"> {{ t("tsfile.data.devices") }}: </span>
-          <Select
-            v-model:value="selectedDevices"
-            mode="multiple"
+          <span class="whitespace-nowrap text-sm text-text-body"> {{ t("tsfile.data.devices") }}: </span>
+          <el-select
+            v-model="selectedDevices"
+            multiple
             :placeholder="t('tsfile.data.selectDevicesPlaceholder')"
-            :options="deviceOptions"
             :disabled="!selectedTable"
-            show-search
-            :max-tag-count="1"
+            filterable
+            collapse-tags
+            :max-collapse-tags="1"
             style="min-width: 220px; max-width: 360px"
-          />
+          >
+            <el-option v-for="opt in deviceOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
         </div>
 
         <!-- 字段多选 -->
         <div class="flex items-center gap-2">
-          <span class="whitespace-nowrap text-sm"> {{ t("tsfile.data.fields") }}: </span>
-          <Select
-            v-model:value="selectedMeasurements"
-            mode="multiple"
+          <span class="whitespace-nowrap text-sm text-text-body"> {{ t("tsfile.data.fields") }}: </span>
+          <el-select
+            v-model="selectedMeasurements"
+            multiple
             :placeholder="t('tsfile.data.selectFieldsPlaceholder')"
-            :options="measurementSelectOptions"
             :disabled="!selectedTable"
-            show-search
-            :max-tag-count="1"
+            filterable
+            collapse-tags
+            :max-collapse-tags="1"
             style="min-width: 192px; max-width: 360px"
-          />
+          >
+            <el-option
+              v-for="opt in measurementSelectOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+              :disabled="opt.disabled"
+            />
+          </el-select>
         </div>
       </div>
 
@@ -359,7 +357,7 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
       <div class="flex flex-wrap items-center gap-4">
         <!-- 快捷时间范围 -->
         <div class="flex items-center gap-2">
-          <Button
+          <el-button
             v-for="range in quickTimeRanges"
             :key="range.value"
             size="small"
@@ -367,57 +365,53 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
             @click="selectQuickTimeRange(range.value)"
           >
             {{ range.label }}
-          </Button>
+          </el-button>
         </div>
 
         <!-- 自定义时间范围 -->
         <div class="flex items-center gap-2">
-          <RangePicker
-            v-model:value="timeRange"
-            show-time
+          <el-date-picker
+            v-model="timeRange"
+            type="datetimerange"
             format="YYYY-MM-DD HH:mm:ss"
-            :placeholder="[t('tsfile.metadata.startTime'), t('tsfile.metadata.endTime')]"
+            :start-placeholder="t('tsfile.metadata.startTime')"
+            :end-placeholder="t('tsfile.metadata.endTime')"
             :disabled-date="disabledDate"
           />
         </div>
 
         <!-- 操作按钮 -->
         <div class="ml-auto flex items-center gap-2">
-          <Button @click="showAdvancedDialog = true">
-            <template #icon>
-              <FilterOutlined />
-            </template>
+          <el-button @click="showAdvancedDialog = true">
+            <Filter :size="14" class="mr-1" />
             {{ t("tsfile.data.advancedFilter") }}
-            <Tag v-if="advancedConditions.length > 0" color="blue" class="ml-1">
+            <el-tag v-if="advancedConditions.length > 0" type="primary" class="ml-1">
               {{ advancedConditions.length }}
-            </Tag>
-          </Button>
-          <Button type="primary" @click="applyFilters">
-            <template #icon>
-              <SearchOutlined />
-            </template>
+            </el-tag>
+          </el-button>
+          <el-button type="primary" @click="applyFilters">
+            <Search :size="14" class="mr-1" />
             {{ t("tsfile.data.applyFilters") }}
-          </Button>
-          <Button @click="resetFilters">
-            <template #icon>
-              <ReloadOutlined />
-            </template>
+          </el-button>
+          <el-button @click="resetFilters">
+            <RotateCcw :size="14" class="mr-1" />
             {{ t("tsfile.common.reset") }}
-          </Button>
+          </el-button>
         </div>
       </div>
 
       <!-- 高级条件摘要 -->
       <div
         v-if="advancedConditions.length > 0"
-        class="flex flex-wrap items-center gap-2 rounded-lg bg-blue-50 p-2 dark:bg-blue-900/20"
+        class="flex flex-wrap items-center gap-2 rounded-lg bg-bg-subtle p-2"
       >
-        <span class="text-sm text-gray-600 dark:text-gray-400">
+        <span class="text-sm text-text-label">
           {{ t("tsfile.data.activeConditions") }}:
         </span>
-        <Tag
+        <el-tag
           v-for="(condition, index) in advancedConditions"
           :key="condition.id"
+          type="info"
           closable
           @close="advancedConditions.splice(index, 1)"
         >
@@ -425,7 +419,7 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
           <span v-if="index < advancedConditions.length - 1" class="ml-1">
             {{ condition.logic }}
           </span>
-        </Tag>
+        </el-tag>
       </div>
     </div>
 

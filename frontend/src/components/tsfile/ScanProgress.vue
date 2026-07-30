@@ -23,7 +23,6 @@
  */
 import type { ScanProgress } from "@/api/tsfile/scan";
 import { computed } from "vue";
-import { Progress } from "antdv-next";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -38,7 +37,10 @@ const visible = computed(() => props.progress.totalCount > 0);
 const isComplete = computed(() => props.progress.percentage >= 100);
 
 const countText = computed(() =>
-  t("tsfile.scan.scannedOf", { scanned: props.progress.scannedCount, total: props.progress.totalCount }),
+  t("tsfile.scan.scannedOf", {
+    scanned: props.progress.scannedCount,
+    total: props.progress.totalCount,
+  }),
 );
 
 const currentFileName = computed(() => props.progress.currentFile || "");
@@ -46,11 +48,20 @@ const currentFileName = computed(() => props.progress.currentFile || "");
 
 <template>
   <div v-if="visible" class="flex flex-col gap-2">
-    <Progress :percent="progress.percentage" :size="{ height: 18 }" :status="isComplete ? 'success' : 'active'" />
-    <div class="flex items-center justify-between text-sm text-gray-500">
-      <span>{{ countText }}</span>
+    <!-- Element Plus 没有旧组件库的 status="active" 动效，进行中沿用默认态 -->
+    <el-progress
+      :percentage="progress.percentage"
+      :stroke-width="14"
+      :status="isComplete ? 'success' : undefined"
+    />
+    <div class="flex items-center justify-between text-[0.8125rem] text-text-body">
+      <span class="tnum">{{ countText }}</span>
     </div>
-    <div v-if="currentFileName && !isComplete" class="truncate text-xs text-gray-400" :title="currentFileName">
+    <div
+      v-if="currentFileName && !isComplete"
+      class="truncate text-xs text-text-body"
+      :title="currentFileName"
+    >
       {{ t("tsfile.scan.scanningFile") }}: {{ currentFileName }}
     </div>
   </div>

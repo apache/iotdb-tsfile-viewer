@@ -247,6 +247,8 @@
       "fileScan": "Single File Scan",
       "directoryPlaceholder": "Enter directory path to scan...",
       "sidebarHint": "Tip: Click a folder in the sidebar tree to auto-fill the path",
+      "idleTitle": "No scan started yet",
+      "idleHint": "Pick a directory or TsFile from the sidebar file tree, or type a path above, then click \"Start Scan\".",
       "filePlaceholder": "Enter TsFile path to check...",
       "quickScan": "Quick Scan",
       "startScan": "Start Scan",

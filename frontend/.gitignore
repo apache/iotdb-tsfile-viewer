@@ -5,3 +5,6 @@ dist
 .env.*.local
 src/auto-imports.d.ts
 src/components.d.ts
+
+# Playwright 走查产生的截图，仅供本地比对
+.screenshots

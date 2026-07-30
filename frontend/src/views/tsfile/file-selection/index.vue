@@ -23,6 +23,7 @@ import { useI18n } from "vue-i18n";
 import { useFileStore } from "@/stores/tsfile/file";
 import FileUpload from "@/components/tsfile/FileUpload.vue";
 import RecentFiles from "@/components/tsfile/RecentFiles.vue";
+import PageHeader from "@/components/layout/PageHeader.vue";
 
 const router = useRouter();
 const fileStore = useFileStore();
@@ -43,8 +44,7 @@ function handleFileUploaded(fileId: string, fileName: string) {
 
 <template>
   <div>
-    <h2 class="text-xl font-bold mb-2">{{ t("tsfile.file.title") }}</h2>
-    <p class="text-gray-500 mb-4">{{ t("tsfile.app.description") }}</p>
+    <PageHeader :title="t('tsfile.file.title')" :subtitle="t('tsfile.app.description')" />
     <div class="space-y-4">
       <FileUpload @uploaded="handleFileUploaded" />
       <RecentFiles />

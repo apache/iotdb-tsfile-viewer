@@ -18,11 +18,12 @@
 -->
 
 <script setup lang="ts">
-import { Button, Modal, Radio, RadioGroup, Space } from 'antdv-next';
-import { ClockCircleOutlined } from '@antdv-next/icons';
-import { ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useTimezone } from '../../composables/useTimezone';
+/** TimezoneSelector - 弹窗内单选时区，确认后才写回偏好设置。 */
+import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
+import { Clock } from "lucide-vue-next";
+
+import { useTimezone } from "@/composables/useTimezone";
 
 const { t } = useI18n();
 const { timezone, timezoneOptions, setTimezone } = useTimezone();
@@ -30,12 +31,12 @@ const { timezone, timezoneOptions, setTimezone } = useTimezone();
 const visible = ref(false);
 const selectedTimezone = ref(timezone.value);
 
-// Watch timezone changes to update selected value
+// 外部改动（例如其它页面）时同步弹窗内的待选值
 watch(timezone, (newValue) => {
   selectedTimezone.value = newValue;
 });
 
-function openModal() {
+function openDialog() {
   selectedTimezone.value = timezone.value;
   visible.value = true;
 }
@@ -53,33 +54,38 @@ function handleCancel() {
 
 <template>
   <div>
-    <Button
-      type="text"
-      style="color: #fff;"
-      size="small"
-      @click="openModal"
+    <button
+      type="button"
+      class="tc-tool-button"
       :aria-label="t('tsfile.preferences.timezone')"
+      @click="openDialog"
     >
-      <template #icon><ClockCircleOutlined /></template>
-    </Button>
+      <Clock class="h-4 w-4" :stroke-width="1.75" />
+    </button>
 
-    <Modal
-      v-model:open="visible"
+    <el-dialog
+      v-model="visible"
       :title="t('tsfile.preferences.timezone')"
-      @ok="handleConfirm"
-      @cancel="handleCancel"
+      width="420px"
+      append-to-body
+      @close="handleCancel"
     >
-      <RadioGroup v-model:value="selectedTimezone">
-        <Space direction="vertical" class="w-full">
-          <Radio
-            v-for="option in timezoneOptions"
-            :key="option.value"
-            :value="option.value"
-          >
-            {{ option.label }} ({{ option.offset }})
-          </Radio>
-        </Space>
-      </RadioGroup>
-    </Modal>
+      <el-radio-group v-model="selectedTimezone" class="flex flex-col !items-start gap-2">
+        <el-radio
+          v-for="option in timezoneOptions"
+          :key="option.value"
+          :value="option.value"
+        >
+          {{ option.label }} ({{ option.offset }})
+        </el-radio>
+      </el-radio-group>
+
+      <template #footer>
+        <el-button @click="handleCancel">{{ t("tsfile.common.cancel") }}</el-button>
+        <el-button type="primary" @click="handleConfirm">
+          {{ t("tsfile.common.confirm") }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>

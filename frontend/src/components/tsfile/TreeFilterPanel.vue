@@ -20,21 +20,17 @@
 <script setup lang="ts">
 /**
  * TreeFilterPanel - 树模型筛选面板
- * 使用 antdv-next 组件
+ * 使用 Element Plus 组件
  */
 import type { AdvancedCondition, TsFileMetadata } from "@/api/tsfile/types";
 
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Button, Select, Tag } from "antdv-next";
-import { DatePicker } from "antdv-next";
 import dayjs from "dayjs";
 
 import { metaApi } from "@/api/tsfile";
 import AdvancedFilterDialog from "@/components/tsfile/AdvancedFilterDialog.vue";
-
-const { RangePicker } = DatePicker;
 
 interface Props {
   fileId: string;
@@ -55,7 +51,7 @@ const metadata = ref<TsFileMetadata | null>(null);
 
 const selectedDevice = ref<string>("");
 const selectedMeasurements = ref<string[]>([]);
-const timeRange = ref<any>(null);
+const timeRange = ref<[Date, Date] | null>(null);
 
 const quickTimeRanges = computed(() => [
   { label: t("tsfile.data.last1h"), value: "1h" },
@@ -101,7 +97,7 @@ function defaultChartMeasurements(): string[] {
 
 const measurementSelectOptions = computed(() => {
   if (!props.chartMode) {
-    return measurementOptions.value.map((m) => ({ label: m, value: m }));
+    return measurementOptions.value.map((m) => ({ label: m, value: m, disabled: false }));
   }
   // In chart mode, disable non-numeric fields
   const measurements = metadata.value?.measurements || [];
@@ -115,9 +111,9 @@ const measurementSelectOptions = computed(() => {
 const fileStartTime = computed(() => metadata.value?.timeRange?.startTime);
 const fileEndTime = computed(() => metadata.value?.timeRange?.endTime);
 
-function disabledDate(current: any) {
+function disabledDate(current: Date) {
   if (!current) return false;
-  const ts = current.valueOf();
+  const ts = dayjs(current).valueOf();
   if (fileStartTime.value != null && ts < dayjs(fileStartTime.value).subtract(1, 'day').startOf('day').valueOf()) return true;
   if (fileEndTime.value != null && ts > dayjs(fileEndTime.value).add(1, 'day').endOf('day').valueOf()) return true;
   return false;
@@ -147,7 +143,7 @@ async function loadMetadata() {
 
 function selectQuickTimeRange(range: string) {
   selectedQuickRange.value = range;
-  const now = dayjs();
+  const now = Date.now();
   const map: Record<string, number> = {
     "1h": 3600000,
     "6h": 21600000,
@@ -157,7 +153,7 @@ function selectQuickTimeRange(range: string) {
   };
   const ms = map[range];
   if (ms) {
-    timeRange.value = [dayjs(now.valueOf() - ms), now];
+    timeRange.value = [new Date(now - ms), new Date(now)];
   }
 }
 
@@ -211,68 +207,80 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
 </script>
 
 <template>
-  <div class="rounded-lg border p-4">
-    <div v-if="loading" class="flex items-center justify-center py-4">
-      <span class="text-gray-500">{{ t("tsfile.common.loading") }}</span>
-    </div>
-    <div v-else-if="error" class="text-center text-red-500">{{ error }}</div>
-    <div v-else class="space-y-4">
+  <div class="tc-panel p-4">
+    <div v-if="error" class="py-4 text-center text-danger">{{ error }}</div>
+    <div v-else v-loading="loading" class="space-y-4">
       <div class="flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-2">
-          <span class="whitespace-nowrap text-sm">{{ t("tsfile.metadata.device") }}:</span>
-          <Select
-            v-model:value="selectedDevice"
-            show-search
+          <span class="whitespace-nowrap text-sm text-text-body">{{ t("tsfile.metadata.device") }}:</span>
+          <el-select
+            v-model="selectedDevice"
+            filterable
             :placeholder="t('tsfile.metadata.searchByDevice')"
-            :options="deviceOptions"
             style="width: 240px"
-          />
+          >
+            <el-option v-for="opt in deviceOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          </el-select>
         </div>
         <div class="flex items-center gap-2">
-          <span class="whitespace-nowrap text-sm">{{ t("tsfile.data.measurements") }}:</span>
-          <Select
-            v-model:value="selectedMeasurements"
-            mode="multiple"
-            show-search
-            :max-tag-count="1"
+          <span class="whitespace-nowrap text-sm text-text-body">{{ t("tsfile.data.measurements") }}:</span>
+          <el-select
+            v-model="selectedMeasurements"
+            multiple
+            filterable
+            collapse-tags
+            :max-collapse-tags="1"
             :placeholder="t('tsfile.data.selectMeasurementsPlaceholder')"
             :disabled="!selectedDevice"
-            :options="measurementSelectOptions"
             style="min-width: 220px; max-width: 360px"
-          />
+          >
+            <el-option
+              v-for="opt in measurementSelectOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+              :disabled="opt.disabled"
+            />
+          </el-select>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-2">
-          <Button
+          <el-button
             v-for="range in quickTimeRanges"
             :key="range.value"
             size="small"
             :type="selectedQuickRange === range.value ? 'primary' : 'default'"
             @click="selectQuickTimeRange(range.value)"
-            >{{ range.label }}</Button
+            >{{ range.label }}</el-button
           >
         </div>
-        <RangePicker v-model:value="timeRange" show-time format="YYYY-MM-DD HH:mm:ss" :disabled-date="disabledDate" />
+        <el-date-picker
+          v-model="timeRange"
+          type="datetimerange"
+          format="YYYY-MM-DD HH:mm:ss"
+          :disabled-date="disabledDate"
+        />
         <div class="ml-auto flex items-center gap-2">
-          <Button @click="showAdvancedDialog = true">
+          <el-button @click="showAdvancedDialog = true">
             {{ t("tsfile.data.advancedFilter") }}
-            <Tag v-if="advancedConditions.length > 0" color="blue" class="ml-1">{{
+            <el-tag v-if="advancedConditions.length > 0" type="primary" class="ml-1">{{
               advancedConditions.length
-            }}</Tag>
-          </Button>
-          <Button type="primary" @click="applyFilters">{{ t("tsfile.data.applyFilters") }}</Button>
-          <Button @click="resetFilters">{{ t("tsfile.common.reset") }}</Button>
+            }}</el-tag>
+          </el-button>
+          <el-button type="primary" @click="applyFilters">{{ t("tsfile.data.applyFilters") }}</el-button>
+          <el-button @click="resetFilters">{{ t("tsfile.common.reset") }}</el-button>
         </div>
       </div>
       <div
         v-if="advancedConditions.length > 0"
-        class="flex flex-wrap items-center gap-2 rounded-lg bg-blue-50 p-2"
+        class="flex flex-wrap items-center gap-2 rounded-lg bg-bg-subtle p-2"
       >
-        <span class="text-sm text-gray-600">{{ t("tsfile.data.activeConditions") }}:</span>
-        <Tag
+        <span class="text-sm text-text-label">{{ t("tsfile.data.activeConditions") }}:</span>
+        <el-tag
           v-for="(condition, index) in advancedConditions"
           :key="condition.id"
+          type="info"
           closable
           @close="advancedConditions.splice(index, 1)"
         >
@@ -280,7 +288,7 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
           <span v-if="index < advancedConditions.length - 1" class="ml-1">{{
             condition.logic
           }}</span>
-        </Tag>
+        </el-tag>
       </div>
     </div>
     <AdvancedFilterDialog

@@ -19,42 +19,53 @@
 
 import { resolve } from "node:path";
 
-import { AntdvNextResolver } from "@antdv-next/auto-import-resolver";
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
-import UnoCSS from "unocss/vite";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
-import { defineConfig } from "vite";
+import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
+import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig({
-  base: "/view",
-  plugins: [
-    vue(),
-    vueJsx(),
-    UnoCSS(),
-    AutoImport({
-      imports: ["vue", "vue-router", "vue-i18n", "pinia"],
-      dts: "src/auto-imports.d.ts",
-    }),
-    Components({
-      resolvers: [AntdvNextResolver({ resolveIcons: true })],
-      dirs: ["src/components"],
-      dts: "src/components.d.ts",
-    }),
-  ],
-  resolve: {
-    alias: {
-      "@": resolve(__dirname, "src"),
-    },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  // 开发代理目标可通过 .env.local 的 VITE_API_PROXY_TARGET 覆盖，
+  // 便于连接远程后端而不必改动仓库内的配置。
+  const env = loadEnv(mode, __dirname, "");
+
+  return {
+    base: "/view",
+    plugins: [
+      vue(),
+      vueJsx(),
+      AutoImport({
+        imports: ["vue", "vue-router", "vue-i18n", "pinia"],
+        dts: "src/auto-imports.d.ts",
+      }),
+      Components({
+        resolvers: [ElementPlusResolver({ importStyle: "sass" })],
+        dirs: ["src/components"],
+        dts: "src/components.d.ts",
+      }),
+    ],
+    resolve: {
+      alias: {
+        "@": resolve(__dirname, "src"),
       },
     },
-  },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: `@use "@/styles/element/index.scss" as *;`,
+        },
+      },
+    },
+    server: {
+      port: 5173,
+      proxy: {
+        "/api": {
+          target: env.VITE_API_PROXY_TARGET || "http://localhost:8080",
+          changeOrigin: true,
+        },
+      },
+    },
+  };
 });

@@ -21,17 +21,21 @@
 /**
  * DataTable 组件 - 数据表格
  * 支持动态列、分页、排序、导出
+ *
+ * 渲染策略：Element Plus 的 el-table 没有虚拟滚动，因此这里**依赖既有的
+ * “列分页”机制**把同时渲染的字段列压到 columnPageSize（默认 50，上限 200）
+ * 以内；行数由后端 limit 控制（默认 100，上限 1000）。列 × 行的单元格量级
+ * 在这个范围内普通 el-table 可以承受，不需要 el-table-v2。
  */
 import type { DataRow } from "@/api/tsfile/types";
-import type { TableColumnType } from "antdv-next";
 
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Button, Card, Input, Pagination, Select, Table, Tooltip } from "antdv-next";
-import { DownloadOutlined } from "@antdv-next/icons";
+import { Download } from "lucide-vue-next";
 
 import { formatTimestamp } from "@/utils/timestamp";
+import { tableStyleProps } from "@/utils/tableStyle";
 
 interface Props {
   data: DataRow[];
@@ -66,15 +70,9 @@ const columnPage = ref(1);
 const columnPageSize = ref(50);
 const columnSearch = ref("");
 
-const limitOptions = [10, 20, 50, 100, 200, 500, 1000].map((v) => ({
-  label: String(v),
-  value: v,
-}));
+const limitOptions = [10, 20, 50, 100, 200, 500, 1000];
 
-const columnPageSizeOptions = [20, 50, 100, 200].map((v) => ({
-  label: String(v),
-  value: v,
-}));
+const columnPageSizeOptions = [20, 50, 100, 200];
 
 // 当前页码
 const currentPage = computed(() => {
@@ -126,7 +124,11 @@ const fieldColumnRange = computed(() => {
   const totalCols = filteredFieldColumns.value.length;
   if (totalCols === 0) return { start: 0, end: 0, total: 0 };
   const start = (columnPage.value - 1) * columnPageSize.value;
-  return { start: start + 1, end: Math.min(start + columnPageSize.value, totalCols), total: totalCols };
+  return {
+    start: start + 1,
+    end: Math.min(start + columnPageSize.value, totalCols),
+    total: totalCols,
+  };
 });
 
 // 当列搜索 / 每页列数 / 数据变化时，重置到第一页并防止页码越界
@@ -137,79 +139,32 @@ watch(fieldColumnTotalPages, (pages) => {
   if (columnPage.value > pages) columnPage.value = pages;
 });
 
-// 动态列定义
-const columns = computed<TableColumnType[]>(() => {
-  const cols: TableColumnType[] = [
-    {
-      title: t("tsfile.data.timestamp"),
-      dataIndex: "timestamp",
-      key: "timestamp",
-      fixed: "left",
-      width: 210,
-      sorter: true,
-    },
-    {
-      title: t("tsfile.data.device"),
-      dataIndex: "__device__",
-      key: "__device__",
-      fixed: "left",
-      width: 180,
-      sorter: true,
-    },
-  ];
-
-  // 标签列（固定左侧）—— tag 名可能与保留列同名（如 "device"），
-  // 固定"设备"列已改用保留 key "__device__" 避免冲突，此处 tag 列可安全使用原名。
-  for (const tagCol of props.tagColumns) {
-    cols.push({
-      title: tagCol,
-      dataIndex: tagCol,
-      key: tagCol,
-      fixed: "left",
-      width: 120,
-      sorter: true,
-    });
-  }
-
-  // 字段列（可滚动）—— 仅渲染当前列分页窗口内的列
-  for (const fieldCol of visibleFieldColumns.value) {
-    cols.push({
-      title: fieldCol,
-      dataIndex: fieldCol,
-      key: fieldCol,
-      width: 120,
-      sorter: true,
-    });
-  }
-
-  return cols;
-});
-
-// 表格横向滚动宽度（固定列 + 当前可见字段列，撑出横向滚动条）
-const scrollX = computed(() => {
-  const fixedWidth = 210 + 180 + props.tagColumns.length * 120;
-  return fixedWidth + visibleFieldColumns.value.length * 120;
-});
-
 // 表格纵向可视高度：用 ResizeObserver 实测表格外层容器的可用高度，
 // 避免用写死常量手算上方元素（列控制条 / 精度说明 Alert / 分页）的高度——
-// 上方任意增删元素时，虚拟滚动的 scroll.y 都能自适应，不再错位。
+// 上方任意增删元素时，表格高度都能自适应，不再错位。
+//
+// 与旧组件库的差异：旧组件库的 `scroll.y` 指的是**表体**高度，需要额外减掉
+// 表头；el-table 的 `height` 是**含表头**的整体高度，因此不再减表头，
+// 只保留一点边框/横向滚动条的余量。表头实测仅用于兜出一个合理的下限
+// （表头 + 至少一行），像素常量已按此重新校准。
 const tableWrapper = ref<HTMLElement | null>(null);
-const tableBodyHeight = ref(400);
+const tableHeight = ref(400);
 let resizeObserver: ResizeObserver | null = null;
-// 表头 DOM 未就绪时的兜底预留高度（表头 + 横向滚动条 + 边框）
-const HEADER_RESERVE_FALLBACK = 64;
-// 横向滚动条 + 底部边框额外预留，避免 body 覆盖到下方分页
-const SCROLLBAR_RESERVE = 16;
+// 表头 DOM 未就绪时的兜底表头高度
+const HEADER_HEIGHT_FALLBACK = 40;
+// 横向滚动条 + 底部边框预留，避免表格压到下方分页
+const SCROLLBAR_RESERVE = 12;
+// 下限至少放得下表头 + 一行数据
+const MIN_ROW_HEIGHT = 36;
 
 function measureTableHeight() {
   const el = tableWrapper.value;
   if (!el) return;
-  // 优先实测真实表头高度（适配 size / 多行表头 / 字体变化），拿不到则用兜底值
-  const headerEl = el.querySelector<HTMLElement>(".ant-table-header, thead");
-  const reserve = (headerEl?.offsetHeight || HEADER_RESERVE_FALLBACK) + SCROLLBAR_RESERVE;
-  const h = el.clientHeight - reserve;
-  tableBodyHeight.value = Math.max(120, Math.floor(h));
+  // 实测真实表头高度（适配 size / 多行表头 / 字体变化），拿不到则用兜底值
+  const headerEl = el.querySelector<HTMLElement>(".el-table__header-wrapper");
+  const headerHeight = headerEl?.offsetHeight || HEADER_HEIGHT_FALLBACK;
+  const available = el.clientHeight - SCROLLBAR_RESERVE;
+  tableHeight.value = Math.max(headerHeight + MIN_ROW_HEIGHT, Math.floor(available));
 }
 
 onMounted(() => {
@@ -226,7 +181,7 @@ onBeforeUnmount(() => {
 });
 
 // loading 结束 / 数据变化后，表头与上下方控制条、分页的显隐会改变，
-// 等 DOM 更新后重新实测表头高度，确保 body 高度精确、不覆盖分页。
+// 等 DOM 更新后重新实测高度，确保表格不覆盖分页。
 watch(
   () => [props.loading, props.data.length, props.total] as const,
   () => nextTick(measureTableHeight),
@@ -293,16 +248,15 @@ function handleColumnPageChange(page: number) {
   columnPage.value = page;
 }
 
-// 处理排序
-function handleTableChange(
-  _pagination: unknown,
-  _filters: unknown,
-  sorter: any,
-) {
-  const singleSorter = Array.isArray(sorter) ? sorter[0] : sorter;
-  if (singleSorter?.order) {
-    sortColumn.value = String(singleSorter.field ?? "");
-    sortDirection.value = singleSorter.order === "ascend" ? "asc" : "desc";
+// 处理排序。Element Plus 的方向枚举是 ascending/descending（旧组件库是 ascend/descend），
+// 传 null 表示取消排序。
+function handleSortChange(payload: {
+  prop: string | null;
+  order: "ascending" | "descending" | null;
+}) {
+  if (payload.order && payload.prop) {
+    sortColumn.value = payload.prop;
+    sortDirection.value = payload.order === "ascending" ? "asc" : "desc";
   } else {
     sortColumn.value = null;
   }
@@ -318,165 +272,210 @@ function formatValue(value: unknown): number | string {
 </script>
 
 <template>
-  <Card class="data-table h-full flex flex-col">
-    <template #title>
-      <div class="flex items-center justify-between">
-        <span class="font-semibold">{{ t("tsfile.data.title") }}</span>
-        <div class="flex gap-2">
-          <Button size="small" @click="emit('export', 'csv')">
-            <template #icon>
-              <DownloadOutlined />
-            </template>
-            {{ t("tsfile.data.exportCsv") }}
-          </Button>
-          <Button size="small" @click="emit('export', 'json')">
-            <template #icon>
-              <DownloadOutlined />
-            </template>
-            {{ t("tsfile.data.exportJson") }}
-          </Button>
-        </div>
+  <div class="data-table tc-panel flex h-full flex-col">
+    <div class="tc-panel-title">
+      <span>{{ t("tsfile.data.title") }}</span>
+      <div class="flex gap-2">
+        <el-button size="small" @click="emit('export', 'csv')">
+          <Download class="mr-1 h-3.5 w-3.5" :stroke-width="1.75" />
+          {{ t("tsfile.data.exportCsv") }}
+        </el-button>
+        <el-button size="small" @click="emit('export', 'json')">
+          <Download class="mr-1 h-3.5 w-3.5" :stroke-width="1.75" />
+          {{ t("tsfile.data.exportJson") }}
+        </el-button>
       </div>
-    </template>
+    </div>
 
-    <!-- 错误提示 -->
-    <Alert
-      v-if="error"
-      type="error"
-      :message="t('tsfile.error.loadFailed')"
-      :description="error"
-      show-icon
-      class="mb-4"
-    />
+    <div class="flex min-h-0 flex-1 flex-col p-4">
+      <!-- 错误提示 -->
+      <el-alert
+        v-if="error"
+        type="error"
+        :title="t('tsfile.error.loadFailed')"
+        show-icon
+        :closable="false"
+        class="mb-4"
+      >
+        {{ error }}
+      </el-alert>
 
-    <!-- 字段列控制条：搜索 + 列分页（避免一次性渲染数千列） -->
-    <div
-      v-if="!error && fieldColumnNames.length > columnPageSize"
-      class="mb-3 flex flex-wrap items-center gap-3"
-    >
-      <Input
-        :value="columnSearch"
-        :placeholder="t('tsfile.data.searchColumn')"
-        allow-clear
-        size="small"
-        style="width: 220px"
-        @update:value="(v: string) => (columnSearch = v ?? '')"
-      />
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-gray-500">{{ t("tsfile.data.columnsPerPage") }}:</span>
-        <Select
-          :value="columnPageSize"
-          :options="columnPageSizeOptions"
+      <!-- 字段列控制条：搜索 + 列分页（避免一次性渲染数千列） -->
+      <div
+        v-if="!error && fieldColumnNames.length > columnPageSize"
+        class="mb-3 flex flex-wrap items-center gap-3"
+      >
+        <el-input
+          v-model="columnSearch"
+          :placeholder="t('tsfile.data.searchColumn')"
+          clearable
           size="small"
-          style="width: 80px"
-          @change="(v: number) => (columnPageSize = v)"
+          style="width: 220px"
+        />
+        <div class="flex items-center gap-2">
+          <span class="text-[0.8125rem] text-text-body">
+            {{ t("tsfile.data.columnsPerPage") }}:
+          </span>
+          <el-select v-model="columnPageSize" size="small" style="width: 84px">
+            <el-option
+              v-for="size in columnPageSizeOptions"
+              :key="size"
+              :label="String(size)"
+              :value="size"
+            />
+          </el-select>
+        </div>
+        <span class="text-[0.8125rem] text-text-body tnum">
+          {{ t("tsfile.data.columns") }} {{ fieldColumnRange.start }}–{{
+            fieldColumnRange.end
+          }}
+          / {{ fieldColumnRange.total }}
+        </span>
+        <el-pagination
+          :current-page="columnPage"
+          :page-size="columnPageSize"
+          :total="filteredFieldColumns.length"
+          size="small"
+          layout="prev, pager, next"
+          @current-change="handleColumnPageChange"
         />
       </div>
-      <span class="text-sm text-gray-500">
-        {{ t("tsfile.data.columns") }} {{ fieldColumnRange.start }}–{{ fieldColumnRange.end }} /
-        {{ fieldColumnRange.total }}
-      </span>
-      <Pagination
-        :current="columnPage"
-        :page-size="columnPageSize"
-        :total="filteredFieldColumns.length"
-        :show-size-changer="false"
-        size="small"
-        simple
-        @change="handleColumnPageChange"
+
+      <!-- 时间戳精度说明 -->
+      <el-alert
+        v-if="!error"
+        type="info"
+        show-icon
+        :title="t('tsfile.data.precisionNote')"
+        :closable="false"
+        class="mb-3"
       />
-    </div>
 
-    <!-- 时间戳精度说明 -->
-    <Alert
-      v-if="!error"
-      type="info"
-      show-icon
-      :message="t('tsfile.data.precisionNote')"
-      class="mb-3"
-      banner
-    />
+      <!-- 数据表格 —— 外层 wrapper 撑满剩余空间，实测其高度供 el-table 使用 -->
+      <div
+        v-if="!error"
+        ref="tableWrapper"
+        class="tc-table-card min-h-0 flex-1"
+      >
+        <el-table
+          v-bind="tableStyleProps"
+          v-loading="loading"
+          :data="tableData"
+          :height="tableHeight"
+          border
+          row-key="_key"
+          :empty-text="t('tsfile.data.noDataFound')"
+          @sort-change="handleSortChange"
+        >
+          <el-table-column
+            :label="t('tsfile.data.timestamp')"
+            prop="timestamp"
+            fixed="left"
+            :width="210"
+            sortable="custom"
+          >
+            <template #default="{ row }">
+              <el-tooltip
+                :content="`${t('tsfile.data.rawTimestamp')}: ${row.timestampRaw ?? row.timestamp}`"
+                placement="top"
+              >
+                <span class="timestamp-cell font-mono text-xs">
+                  {{ formatTimestamp(row.timestamp as number) }}
+                </span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
 
-    <!-- 数据表格 —— 外层 wrapper 撑满剩余空间，实测其高度供虚拟滚动使用 -->
-    <div v-if="!error" ref="tableWrapper" class="flex-1 min-h-0">
-    <Table
-      :columns="columns"
-      :data-source="tableData"
-      :loading="loading"
-      :pagination="false"
-      :scroll="{ x: scrollX, y: tableBodyHeight }"
-      :virtual="true"
-      bordered
-      size="middle"
-      row-key="_key"
-      @change="handleTableChange"
-    >
-      <template #bodyCell="{ column, text, record }">
-        <template v-if="column.key === 'timestamp'">
-          <Tooltip :title="`${t('tsfile.data.rawTimestamp')}: ${record.timestampRaw ?? text}`">
-            <span class="font-mono text-xs timestamp-cell">
-              {{ formatTimestamp(text as number) }}
-            </span>
-          </Tooltip>
-        </template>
-        <template v-else-if="column.key === '__device__'">
-          <span class="font-medium">{{ text }}</span>
-        </template>
-        <template v-else>
-          <span :class="typeof text === 'number' ? 'font-mono' : ''">
-            {{ text }}
-          </span>
-        </template>
-      </template>
-    </Table>
-    </div>
-
-    <!-- 分页 -->
-    <div v-if="!loading && total > 0" class="mt-4 flex items-center justify-between border-t pt-4">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-500"> {{ t("tsfile.data.limit") }}: </span>
-          <Select
-            :value="internalLimit"
-            :options="limitOptions"
-            size="small"
-            style="width: 90px"
-            @change="handleLimitChange"
+          <el-table-column
+            :label="t('tsfile.data.device')"
+            prop="__device__"
+            fixed="left"
+            :width="180"
+            sortable="custom"
+            show-overflow-tooltip
           />
-        </div>
-        <span class="text-sm text-gray-500">
-          {{ currentPage }} / {{ totalPages }} {{ t("tsfile.data.pages") }}
-        </span>
+
+          <!--
+            标签列（固定左侧）—— tag 名可能与保留列同名（如 "device"），
+            固定"设备"列已改用保留 key "__device__" 避免冲突，此处 tag 列可安全使用原名。
+          -->
+          <el-table-column
+            v-for="tagCol in tagColumns"
+            :key="`tag-${tagCol}`"
+            :label="tagCol"
+            :prop="tagCol"
+            fixed="left"
+            :width="120"
+            sortable="custom"
+            show-overflow-tooltip
+          />
+
+          <!-- 字段列（可滚动）—— 仅渲染当前列分页窗口内的列 -->
+          <el-table-column
+            v-for="fieldCol in visibleFieldColumns"
+            :key="`field-${fieldCol}`"
+            :label="fieldCol"
+            :prop="fieldCol"
+            :width="120"
+            sortable="custom"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <span :class="typeof row[fieldCol] === 'number' ? 'font-mono' : ''">
+                {{ row[fieldCol] }}
+              </span>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
-      <Pagination
-        :current="currentPage"
-        :page-size="internalLimit"
-        :total="total"
-        size="small"
-        @change="handlePageChange"
-      />
-    </div>
+      <!-- 分页 -->
+      <div
+        v-if="!loading && total > 0"
+        class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-default pt-4"
+      >
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-[0.8125rem] text-text-body">
+              {{ t("tsfile.data.limit") }}:
+            </span>
+            <el-select
+              :model-value="internalLimit"
+              size="small"
+              style="width: 94px"
+              @update:model-value="handleLimitChange"
+            >
+              <el-option
+                v-for="option in limitOptions"
+                :key="option"
+                :label="String(option)"
+                :value="option"
+              />
+            </el-select>
+          </div>
+          <span class="text-[0.8125rem] text-text-body tnum">
+            {{ currentPage }} / {{ totalPages }} {{ t("tsfile.data.pages") }}
+          </span>
+        </div>
 
-    <!-- 空状态 -->
-    <div v-if="!loading && !error && tableData.length === 0" class="py-8 text-center text-gray-500">
-      {{ t("tsfile.data.noDataFound") }}
+        <!-- Element Plus 不支持 旧组件库的 :show-total 函数，总数用内置 total 布局 -->
+        <el-pagination
+          :current-page="currentPage"
+          :page-size="internalLimit"
+          :total="total"
+          size="small"
+          layout="total, prev, pager, next"
+          @current-change="handlePageChange"
+        />
+      </div>
     </div>
-  </Card>
+  </div>
 </template>
 
 <style scoped>
-/* Card 内容区撑满并成为 flex 列容器，使表格 wrapper 的 flex-1 能拿到真实剩余高度 */
-.data-table :deep(.ant-card-body) {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
 /* 时间戳单元格：虚线下划线提示悬浮可查看原始存储值 */
 .timestamp-cell {
-  border-bottom: 1px dotted var(--ant-color-border, #bbb);
+  border-bottom: 1px dotted var(--border-default);
   cursor: help;
 }
 </style>
