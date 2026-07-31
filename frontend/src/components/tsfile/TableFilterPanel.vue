@@ -368,7 +368,8 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
           </el-button>
         </div>
 
-        <!-- 自定义时间范围 -->
+        <!-- 自定义时间范围。Element Plus 给 datetimerange 的默认宽度（400px）
+             是按更长的日期格式留的，这里两端都是 19 字符，收窄后仍不截断 -->
         <div class="flex items-center gap-2">
           <el-date-picker
             v-model="timeRange"
@@ -377,6 +378,7 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
             :start-placeholder="t('tsfile.metadata.startTime')"
             :end-placeholder="t('tsfile.metadata.endTime')"
             :disabled-date="disabledDate"
+            style="width: 372px"
           />
         </div>
 

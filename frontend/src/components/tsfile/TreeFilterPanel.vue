@@ -260,6 +260,7 @@ function handleAdvancedApply(conditions: AdvancedCondition[]) {
           type="datetimerange"
           format="YYYY-MM-DD HH:mm:ss"
           :disabled-date="disabledDate"
+          style="width: 372px"
         />
         <div class="ml-auto flex items-center gap-2">
           <el-button @click="showAdvancedDialog = true">

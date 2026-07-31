@@ -308,10 +308,11 @@ function formatValue(value: unknown): number | string {
         {{ error }}
       </el-alert>
 
-      <!-- 字段列控制条：搜索 + 列分页（避免一次性渲染数千列） -->
+      <!-- 字段列控制条：搜索 + 列分页（避免一次性渲染数千列）。整体右对齐，
+           与下方表格右侧的横向滚动区对齐，左侧留白让位给表格首列 -->
       <div
         v-if="!error && fieldColumnNames.length > columnPageSize"
-        class="mb-3 flex flex-wrap items-center gap-3"
+        class="mb-3 flex flex-wrap items-center justify-end gap-3"
       >
         <el-input
           v-model="columnSearch"
