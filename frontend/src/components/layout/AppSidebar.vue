@@ -21,8 +21,11 @@
 /**
  * AppSidebar - 应用左侧栏：品牌区 + 导航 + 文件树插槽 + 底部工具区。
  * lg 断点以下退化为抽屉（fixed + translate-x + 遮罩）。
+ *
+ * 宽度可由右边缘手柄拖拽调整，并持久化到 localStorage：文件树里的
+ * 路径长短差异很大，固定宽度要么浪费横向空间、要么大量截断文件名。
  */
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { FolderTree, ScanSearch } from "lucide-vue-next";
 
@@ -56,6 +59,87 @@ const navItems = [
   { name: "FileSelection", labelKey: "tsfile.nav.files", icon: FolderTree },
   { name: "FileScan", labelKey: "tsfile.nav.scan", icon: ScanSearch },
 ];
+
+// —— 侧栏宽度拖拽 ——
+const SIDEBAR_WIDTH_KEY = "tsfile-viewer:sidebar-width";
+const SIDEBAR_WIDTH_DEFAULT = 220;
+// 下限保证导航文字与底部 5 个工具按钮不换行；上限避免内容区被挤没
+const SIDEBAR_WIDTH_MIN = 180;
+const SIDEBAR_WIDTH_MAX = 480;
+
+const asideEl = ref<HTMLElement | null>(null);
+const resizing = ref(false);
+
+function clampWidth(value: number): number {
+  return Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, Math.round(value)));
+}
+
+// localStorage 在隐私模式 / 禁用 cookie 下会抛出，宽度不是关键状态，读写都静默降级
+function readStoredWidth(): number {
+  try {
+    const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
+    return Number.isFinite(stored) && stored > 0 ? clampWidth(stored) : SIDEBAR_WIDTH_DEFAULT;
+  } catch {
+    return SIDEBAR_WIDTH_DEFAULT;
+  }
+}
+
+function persistWidth(width: number): void {
+  try {
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+  } catch {
+    // 忽略：宽度丢失只影响下次进入时的初始值
+  }
+}
+
+const sidebarWidth = ref(readStoredWidth());
+
+function updateWidthFromPointer(event: PointerEvent): void {
+  // 以侧栏自身左边缘为基准而不是假设它贴在 x=0，窄屏抽屉态同样成立
+  const left = asideEl.value?.getBoundingClientRect().left ?? 0;
+  sidebarWidth.value = clampWidth(event.clientX - left);
+}
+
+function handleResizeStart(event: PointerEvent): void {
+  resizing.value = true;
+  // 指针捕获：拖到手柄外（甚至移出窗口）也能继续收到 move/up
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  event.preventDefault();
+}
+
+function handleResizeMove(event: PointerEvent): void {
+  if (!resizing.value) return;
+  updateWidthFromPointer(event);
+}
+
+function handleResizeEnd(event: PointerEvent): void {
+  if (!resizing.value) return;
+  resizing.value = false;
+  const el = event.currentTarget as HTMLElement;
+  if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId);
+  persistWidth(sidebarWidth.value);
+}
+
+/** 双击手柄恢复默认宽度 */
+function resetWidth(): void {
+  sidebarWidth.value = SIDEBAR_WIDTH_DEFAULT;
+  persistWidth(SIDEBAR_WIDTH_DEFAULT);
+}
+
+/** 键盘调宽：手柄可聚焦，方向键每次 16px，Home 复位 */
+function handleResizeKeydown(event: KeyboardEvent): void {
+  const STEP = 16;
+  if (event.key === "ArrowLeft") sidebarWidth.value = clampWidth(sidebarWidth.value - STEP);
+  else if (event.key === "ArrowRight") sidebarWidth.value = clampWidth(sidebarWidth.value + STEP);
+  else if (event.key === "Home") sidebarWidth.value = SIDEBAR_WIDTH_DEFAULT;
+  else return;
+  event.preventDefault();
+  persistWidth(sidebarWidth.value);
+}
+
+onBeforeUnmount(() => {
+  resizing.value = false;
+});
 </script>
 
 <template>
@@ -67,8 +151,14 @@ const navItems = [
   />
 
   <aside
-    class="fixed inset-y-0 left-0 z-40 flex w-[220px] flex-shrink-0 flex-col border-r border-border-default bg-bg-card transition-transform duration-200 lg:static lg:translate-x-0"
-    :class="props.open ? 'translate-x-0' : '-translate-x-full'"
+    ref="asideEl"
+    class="fixed inset-y-0 left-0 z-40 flex flex-shrink-0 flex-col border-r border-border-default bg-bg-card lg:relative lg:translate-x-0"
+    :class="[
+      props.open ? 'translate-x-0' : '-translate-x-full',
+      // 拖拽中关掉过渡，否则宽度跟手会有迟滞；同时禁选中避免拖出文字高亮
+      resizing ? 'select-none' : 'transition-transform duration-200',
+    ]"
+    :style="{ width: `${sidebarWidth}px` }"
   >
     <!-- 品牌区 -->
     <div
@@ -130,6 +220,33 @@ const navItems = [
       <TimezoneSelector />
       <FullscreenToggle />
       <RefreshButton />
+    </div>
+
+    <!--
+      宽度拖拽手柄。横跨边框两侧（-right-1 + w-2）以放大命中区，
+      窄屏抽屉态下隐藏——那里宽度由断点决定，拖拽没有意义。
+    -->
+    <div
+      class="group absolute inset-y-0 -right-1 z-10 hidden w-2 cursor-col-resize touch-none lg:block"
+      role="separator"
+      tabindex="0"
+      aria-orientation="vertical"
+      :aria-label="t('tsfile.app.resizeSidebar')"
+      :aria-valuenow="sidebarWidth"
+      :aria-valuemin="SIDEBAR_WIDTH_MIN"
+      :aria-valuemax="SIDEBAR_WIDTH_MAX"
+      :title="t('tsfile.app.resizeSidebarHint')"
+      @pointerdown="handleResizeStart"
+      @pointermove="handleResizeMove"
+      @pointerup="handleResizeEnd"
+      @pointercancel="handleResizeEnd"
+      @dblclick="resetWidth"
+      @keydown="handleResizeKeydown"
+    >
+      <div
+        class="mx-auto h-full w-px transition-colors group-hover:bg-primary group-focus-visible:bg-primary"
+        :class="resizing ? 'bg-primary' : 'bg-transparent'"
+      />
     </div>
   </aside>
 </template>

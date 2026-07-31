@@ -2,7 +2,9 @@
   "tsfile": {
     "app": {
       "title": "TsFile Viewer",
-      "description": "Apache TsFile Format Data Viewing and Analysis Tool"
+      "description": "Apache TsFile Format Data Viewing and Analysis Tool",
+      "resizeSidebar": "Resize sidebar",
+      "resizeSidebarHint": "Drag to resize, double-click to reset"
     },
     "nav": {
       "home": "Home",

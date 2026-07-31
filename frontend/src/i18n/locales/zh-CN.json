@@ -2,7 +2,9 @@
   "tsfile": {
     "app": {
       "title": "TsFile 查看器",
-      "description": "Apache TsFile 格式数据查看和分析工具"
+      "description": "Apache TsFile 格式数据查看和分析工具",
+      "resizeSidebar": "调整侧栏宽度",
+      "resizeSidebarHint": "拖动调整宽度，双击恢复默认"
     },
     "nav": {
       "home": "首页",
