@@ -280,6 +280,29 @@
   background-color: var(--bg-subtle);
 }
 
+/*
+ * 固定列必须不透明。
+ *
+ * Element Plus 的固定列不是独立图层，而是靠 `position: sticky` 停在原地，
+ * 且组件库给它的底色是 `background: inherit`——继承自上面被透明化的 `tr`。
+ * 结果是横向滚动时下层单元格会从固定列底下透上来（表现为文字重叠）。
+ * 这里把固定列单独刷回卡片底色，并补上对应的 hover 态，否则固定列会在
+ * 悬浮时停在卡片色上，和滚动区的高亮行对不齐。
+ *
+ * 固定列右侧的分隔阴影由组件库的 `is-scrolling-*` 规则负责，不必自己画。
+ */
+.tc-table-card .el-table th.el-table-fixed-column--left,
+.tc-table-card .el-table th.el-table-fixed-column--right,
+.tc-table-card .el-table td.el-table-fixed-column--left,
+.tc-table-card .el-table td.el-table-fixed-column--right {
+  background-color: var(--bg-card);
+}
+
+.tc-table-card .el-table__body tr:hover > td.el-table-fixed-column--left,
+.tc-table-card .el-table__body tr:hover > td.el-table-fixed-column--right {
+  background-color: var(--bg-subtle);
+}
+
 /* 表格右上角的横向滚动条不该盖住最后一行 */
 .tc-table-card .el-table__border-left-patch {
   display: none;

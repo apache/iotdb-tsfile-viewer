@@ -23,11 +23,15 @@
  * 设计规范要求表头比正文更小、更淡，单元格用接近标题的深色，
  * 且表格自身透明——底色与圆角由外层 `.tc-table-card` 提供。
  * 这些取值必须在所有表格间保持一致，因此集中在这里而不是散落到各组件。
+ *
+ * 背景色**不在这里设置**：`headerCellStyle` / `rowStyle` 会渲染成内联
+ * 样式，优先级高于任何选择器，固定列（sticky 定位）就无法在 index.css 里
+ * 被重新刷成不透明底色，横向滚动时下层单元格会透上来。透明化统一由
+ * index.css 的 `.tc-table-card .el-table …` 规则负责。
  */
 
 /** 表头单元格：0.75rem / 500 字重 / 次级文字色 */
 export const tableHeaderCellStyle = {
-  background: "transparent",
   borderBottomColor: "var(--border-default)",
   color: "var(--text-body)",
   fontSize: "0.75rem",
@@ -43,11 +47,6 @@ export const tableCellStyle = {
   padding: "0.5rem 0",
 } as const;
 
-/** 行背景透明，交给 `.tc-table-card` 与 hover 态处理 */
-export const tableRowStyle = {
-  background: "transparent",
-} as const;
-
 /**
  * 一次性展开到 `<el-table>` 上的属性集合。
  *
@@ -56,5 +55,4 @@ export const tableRowStyle = {
 export const tableStyleProps = {
   headerCellStyle: tableHeaderCellStyle,
   cellStyle: tableCellStyle,
-  rowStyle: tableRowStyle,
 } as const;
