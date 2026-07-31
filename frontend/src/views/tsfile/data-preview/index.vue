@@ -47,7 +47,6 @@ const displayFileName = computed(() => {
   }
 });
 const dataRows = ref<DataRow[]>([]);
-const total = ref(0);
 const currentOffset = ref(0);
 const currentLimit = ref(100);
 const hasMore = ref(false);
@@ -76,7 +75,6 @@ watch(
   (newId, oldId) => {
     if (newId && newId !== oldId) {
       dataRows.value = [];
-      total.value = 0;
       currentOffset.value = 0;
       hasMore.value = false;
       error.value = null;
@@ -114,7 +112,6 @@ async function loadData(filters: Record<string, unknown>) {
     };
     const response = await dataApi.previewData(request);
     dataRows.value = response.data;
-    total.value = response.total;
     currentOffset.value = response.offset;
     currentLimit.value = response.limit;
     hasMore.value = response.hasMore;
@@ -238,7 +235,6 @@ function goToQuickScan() {
     <div class="flex-1 mt-3 min-h-0">
       <DataTable
         :data="dataRows"
-        :total="total"
         :offset="currentOffset"
         :limit="currentLimit"
         :has-more="hasMore"

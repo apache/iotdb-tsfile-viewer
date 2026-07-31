@@ -207,7 +207,12 @@
       "maxConditionsReached": "最多支持 10 个条件",
       "searchColumn": "搜索字段列",
       "columnsPerPage": "每页列数",
-      "columns": "字段列"
+      "columns": "字段列",
+      "rowRange": "第 {start}–{end} 行",
+      "rowRangeTotal": "第 {start}–{end} 行，共 {total} 行",
+      "pageNumber": "第 {page} 页",
+      "prevPage": "上一页",
+      "nextPage": "下一页"
     },
     "chart": {
       "title": "图表可视化",

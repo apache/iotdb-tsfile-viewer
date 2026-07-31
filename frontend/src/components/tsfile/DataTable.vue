@@ -32,14 +32,13 @@ import type { DataRow } from "@/api/tsfile/types";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Download } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Download } from "lucide-vue-next";
 
 import { formatTimestamp } from "@/utils/timestamp";
 import { tableStyleProps } from "@/utils/tableStyle";
 
 interface Props {
   data: DataRow[];
-  total: number;
   offset: number;
   limit?: number;
   hasMore: boolean;
@@ -74,15 +73,20 @@ const limitOptions = [10, 20, 50, 100, 200, 500, 1000];
 
 const columnPageSizeOptions = [20, 50, 100, 200];
 
-// 当前页码
-const currentPage = computed(() => {
-  return Math.floor(props.offset / internalLimit.value) + 1;
-});
+// 行分页是游标式的：预览接口只多读一行来探测"是否还有下一页"，拿不到数据集
+// 总行数（见后端 DataPreviewResponse.total 的说明），所以这里只按
+// offset / limit / hasMore 推导，不显示总页数。
+const currentPage = computed(() => Math.floor(props.offset / internalLimit.value) + 1);
 
-// 总页数
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(props.total / internalLimit.value));
-});
+// 当前页的行区间；空页时归零，避免出现 "第 101–100 行"
+const rowRangeStart = computed(() => (props.data.length === 0 ? 0 : props.offset + 1));
+const rowRangeEnd = computed(() => props.offset + props.data.length);
+
+// 翻到最后一页后（没有更多数据）区间末尾就是过滤后的真实总行数，此时才敢报总数
+const knownTotalRows = computed(() => (props.hasMore ? null : rowRangeEnd.value));
+
+const canGoPrev = computed(() => props.offset > 0);
+const canGoNext = computed(() => props.hasMore);
 
 // 获取所有测点列
 const measurementColumns = computed(() => {
@@ -183,7 +187,7 @@ onBeforeUnmount(() => {
 // loading 结束 / 数据变化后，表头与上下方控制条、分页的显隐会改变，
 // 等 DOM 更新后重新实测高度，确保表格不覆盖分页。
 watch(
-  () => [props.loading, props.data.length, props.total] as const,
+  () => [props.loading, props.data.length, props.offset] as const,
   () => nextTick(measureTableHeight),
 );
 
@@ -233,8 +237,12 @@ watch(
 );
 
 // 处理分页变化
-function handlePageChange(page: number) {
-  emit("pageChange", page);
+function goToPrevPage() {
+  if (canGoPrev.value) emit("pageChange", currentPage.value - 1);
+}
+
+function goToNextPage() {
+  if (canGoNext.value) emit("pageChange", currentPage.value + 1);
 }
 
 // 处理每页条数变化
@@ -429,12 +437,12 @@ function formatValue(value: unknown): number | string {
         </el-table>
       </div>
 
-      <!-- 分页 -->
+      <!-- 行分页：游标式（上一页 / 下一页），总行数只在读到末页后才可知 -->
       <div
-        v-if="!loading && total > 0"
+        v-if="!loading && (data.length > 0 || offset > 0)"
         class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border-default pt-4"
       >
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="text-[0.8125rem] text-text-body">
               {{ t("tsfile.data.limit") }}:
@@ -454,19 +462,34 @@ function formatValue(value: unknown): number | string {
             </el-select>
           </div>
           <span class="text-[0.8125rem] text-text-body tnum">
-            {{ currentPage }} / {{ totalPages }} {{ t("tsfile.data.pages") }}
+            <template v-if="knownTotalRows !== null">
+              {{
+                t("tsfile.data.rowRangeTotal", {
+                  start: rowRangeStart,
+                  end: rowRangeEnd,
+                  total: knownTotalRows,
+                })
+              }}
+            </template>
+            <template v-else>
+              {{ t("tsfile.data.rowRange", { start: rowRangeStart, end: rowRangeEnd }) }}
+            </template>
           </span>
         </div>
 
-        <!-- Element Plus 不支持 旧组件库的 :show-total 函数，总数用内置 total 布局 -->
-        <el-pagination
-          :current-page="currentPage"
-          :page-size="internalLimit"
-          :total="total"
-          size="small"
-          layout="total, prev, pager, next"
-          @current-change="handlePageChange"
-        />
+        <div class="flex items-center gap-2">
+          <span class="text-[0.8125rem] text-text-body tnum">
+            {{ t("tsfile.data.pageNumber", { page: currentPage }) }}
+          </span>
+          <el-button size="small" :disabled="!canGoPrev" @click="goToPrevPage">
+            <ChevronLeft class="mr-1 h-3.5 w-3.5" :stroke-width="1.75" />
+            {{ t("tsfile.data.prevPage") }}
+          </el-button>
+          <el-button size="small" :disabled="!canGoNext" @click="goToNextPage">
+            {{ t("tsfile.data.nextPage") }}
+            <ChevronRight class="ml-1 h-3.5 w-3.5" :stroke-width="1.75" />
+          </el-button>
+        </div>
       </div>
     </div>
   </div>

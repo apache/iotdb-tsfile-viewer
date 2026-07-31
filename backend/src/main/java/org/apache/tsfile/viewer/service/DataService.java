@@ -107,6 +107,10 @@ public class DataService {
     try {
       // Determine read limit: if no post-read filters are needed, only read offset+limit rows
       // to avoid loading the entire dataset into memory (OOM risk for large files).
+      //
+      // The extra +1 row is what makes hasMore meaningful: reading exactly offset+limit rows
+      // makes the result indistinguishable from "the dataset ends here", which pinned the UI
+      // to a single page. The extra row is probed only, never returned.
       boolean hasPostReadFilters =
           (filters.getDevices() != null && !filters.getDevices().isEmpty())
               || (filters.getMeasurements() != null && !filters.getMeasurements().isEmpty())
@@ -117,7 +121,7 @@ public class DataService {
           hasPostReadFilters
               ? tsFileProperties.getQuery().getMaxResultSize()
               : Math.min(
-                  filters.getOffset() + filters.getLimit(),
+                  filters.getOffset() + filters.getLimit() + 1,
                   tsFileProperties.getQuery().getMaxResultSize());
 
       // Read data with filters using file path
@@ -141,24 +145,29 @@ public class DataService {
       // Check timeout again
       checkTimeout(startTime, timeoutSeconds);
 
-      // Apply pagination
-      int total = filteredData.size();
+      // Apply pagination.
+      //
+      // `rowsRead` is how many rows this query actually materialized, which is NOT the size of
+      // the dataset: without post-read filters the reader stops at offset+limit+1 rows. It equals
+      // the true filtered total only once the reader ran dry (hasMore == false); while hasMore is
+      // true it is merely a lower bound. Clients must not derive a page count from it.
+      int rowsRead = filteredData.size();
       int offset = filters.getOffset();
       int limit = filters.getLimit();
 
       List<DataRow> pagedData;
-      if (offset >= total) {
+      if (offset >= rowsRead) {
         pagedData = new ArrayList<>();
       } else {
-        int endIndex = Math.min(offset + limit, total);
+        int endIndex = Math.min(offset + limit, rowsRead);
         pagedData = filteredData.subList(offset, endIndex);
       }
 
-      boolean hasMore = offset + limit < total;
+      boolean hasMore = offset + limit < rowsRead;
 
       return DataPreviewResponse.builder()
           .data(pagedData)
-          .total(total)
+          .total(rowsRead)
           .limit(limit)
           .offset(offset)
           .hasMore(hasMore)

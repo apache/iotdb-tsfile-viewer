@@ -207,7 +207,12 @@
       "maxConditionsReached": "Maximum 10 conditions allowed",
       "searchColumn": "Search columns",
       "columnsPerPage": "Columns/page",
-      "columns": "Columns"
+      "columns": "Columns",
+      "rowRange": "Rows {start}–{end}",
+      "rowRangeTotal": "Rows {start}–{end} of {total}",
+      "pageNumber": "Page {page}",
+      "prevPage": "Previous",
+      "nextPage": "Next"
     },
     "chart": {
       "title": "Chart Visualization",
