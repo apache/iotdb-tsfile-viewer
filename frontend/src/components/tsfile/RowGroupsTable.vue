@@ -27,7 +27,9 @@ import type { RowGroup } from "@/api/tsfile/types";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Card, Input, Spin, Table } from "antdv-next";
+import { Search } from "lucide-vue-next";
+
+import { tableStyleProps } from "@/utils/tableStyle";
 
 interface Props {
   rowGroups: RowGroup[];
@@ -57,88 +59,72 @@ const filteredRowGroups = computed(() => {
 function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
-
-const columns = computed(() => [
-  {
-    title: t("tsfile.metadata.rowGroupIndex"),
-    dataIndex: "index",
-    key: "index",
-    width: 80,
-    align: "center" as const,
-  },
-  {
-    title: t("tsfile.metadata.device"),
-    dataIndex: "device",
-    key: "device",
-  },
-  {
-    title: t("tsfile.metadata.timeRange"),
-    key: "timeRange",
-  },
-  {
-    title: t("tsfile.metadata.chunkCount"),
-    dataIndex: "chunkCount",
-    key: "chunkCount",
-    width: 120,
-    align: "center" as const,
-  },
-]);
 </script>
 
 <template>
-  <Card>
-    <template #title>
-      <div class="flex items-center justify-between">
-        <span class="font-semibold">
-          {{ t("tsfile.metadata.rowGroups") }}
-          <span class="ml-2 text-sm font-normal text-gray-500">
-            ({{ filteredRowGroups.length }} / {{ rowGroups.length }})
-          </span>
+  <div class="tc-panel">
+    <div class="tc-panel-title">
+      <span>
+        {{ t("tsfile.metadata.rowGroups") }}
+        <span class="ml-2 text-xs text-text-body tnum">
+          ({{ filteredRowGroups.length }} / {{ rowGroups.length }})
         </span>
-        <Input
-          v-model:value="searchQuery"
-          :placeholder="t('tsfile.metadata.searchByDevice')"
-          allow-clear
-          class="w-64"
-          size="small"
-        >
-          <template #prefix>
-            <span class="i-mdi:magnify" />
-          </template>
-        </Input>
-      </div>
-    </template>
-
-    <Spin :spinning="loading">
-      <Table
-        :data-source="filteredRowGroups"
-        :columns="columns"
-        :pagination="false"
-        :scroll="{ y: props.scrollY }"
-        :virtual="filteredRowGroups.length > 100"
-        row-key="index"
+      </span>
+      <el-input
+        v-model="searchQuery"
+        :placeholder="t('tsfile.metadata.searchByDevice')"
+        clearable
+        class="w-64"
         size="small"
-        bordered
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'device'">
-            <span class="font-medium">{{ record.device }}</span>
-          </template>
-          <template v-else-if="column.key === 'timeRange'">
-            <span class="font-mono text-xs">
-              {{ formatTime(record.startTime) }}
-            </span>
-            <span class="mx-2 text-gray-400">~</span>
-            <span class="font-mono text-xs">
-              {{ formatTime(record.endTime) }}
-            </span>
-          </template>
+        <template #prefix>
+          <Search class="h-3.5 w-3.5" :stroke-width="1.75" />
         </template>
-      </Table>
+      </el-input>
+    </div>
 
-      <div v-if="rowGroups.length === 0" class="py-8 text-center text-gray-500">
-        {{ t("tsfile.metadata.noRowGroups") }}
+    <div class="p-4">
+      <div class="tc-table-card">
+        <!--
+          Element Plus 的 el-table 没有虚拟滚动（旧组件库的 :virtual 无对应能力），
+          这里改用 max-height 让表格自身滚动；RowGroup 数量通常在千级以内可以承受。
+        -->
+        <el-table
+          v-bind="tableStyleProps"
+          v-loading="loading"
+          :data="filteredRowGroups"
+          :max-height="props.scrollY"
+          row-key="index"
+          size="small"
+          border
+          :empty-text="t('tsfile.metadata.noRowGroups')"
+        >
+          <el-table-column
+            :label="t('tsfile.metadata.rowGroupIndex')"
+            prop="index"
+            :width="80"
+            align="center"
+          />
+          <el-table-column
+            :label="t('tsfile.metadata.device')"
+            prop="device"
+            show-overflow-tooltip
+          />
+          <el-table-column :label="t('tsfile.metadata.timeRange')">
+            <template #default="{ row }">
+              <span class="font-mono text-xs">{{ formatTime(row.startTime) }}</span>
+              <span class="mx-2 text-text-body">~</span>
+              <span class="font-mono text-xs">{{ formatTime(row.endTime) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="t('tsfile.metadata.chunkCount')"
+            prop="chunkCount"
+            :width="120"
+            align="center"
+          />
+        </el-table>
       </div>
-    </Spin>
-  </Card>
+    </div>
+  </div>
 </template>

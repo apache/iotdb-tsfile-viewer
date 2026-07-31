@@ -22,11 +22,11 @@ import type { ChartDataRequest, ChartSeries, TimeRange, TsFileMetadata } from "@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Alert, Button } from "antdv-next";
 import { dataApi, metaApi } from "@/api/tsfile";
 import ChartPanel from "@/components/tsfile/ChartPanel.vue";
 import TableFilterPanel from "@/components/tsfile/TableFilterPanel.vue";
 import TreeFilterPanel from "@/components/tsfile/TreeFilterPanel.vue";
+import PageHeader from "@/components/layout/PageHeader.vue";
 import { useFileStore } from "@/stores/tsfile/file";
 import { decodeFileId } from "@/utils/fileId";
 
@@ -141,24 +141,27 @@ function goToQuickScan() {
 </script>
 
 <template>
-  <div class="flex flex-col" style="height: calc(100vh - 80px)">
-    <div class="flex items-center justify-between mb-3 flex-shrink-0">
-      <div>
-        <h2 class="text-xl font-bold">{{ t("tsfile.chart.title") }}</h2>
-        <p class="text-sm text-gray-500">{{ displayFileName }}</p>
-      </div>
-      <div class="flex gap-2">
-        <Button @click="goBack">{{ t("tsfile.common.back") }}</Button>
-        <Button @click="goToMetadata">{{ t("tsfile.metadata.title") }}</Button>
-        <Button type="primary" @click="goToDataPreview">{{ t("tsfile.data.title") }}</Button>
-      </div>
-    </div>
+  <!-- 高度交给父级 flex 布局，不要用 calc(100vh - 常量) 猜页头高度 -->
+  <div class="flex h-full flex-col">
+    <PageHeader :title="t('tsfile.chart.title')" :subtitle="displayFileName">
+      <template #actions>
+        <el-button @click="goBack">{{ t("tsfile.common.back") }}</el-button>
+        <el-button @click="goToMetadata">{{ t("tsfile.metadata.title") }}</el-button>
+        <el-button type="primary" @click="goToDataPreview">{{ t("tsfile.data.title") }}</el-button>
+      </template>
+    </PageHeader>
     <template v-if="metaError">
-      <Alert type="error" show-icon :message="t('tsfile.error.loadFailed')" :description="metaError" class="mb-3">
-        <template #action>
-          <Button size="small" type="primary" danger @click="goToQuickScan">{{ t('tsfile.scan.quickScan') }}</Button>
-        </template>
-      </Alert>
+      <div class="tc-panel mb-3">
+        <div class="flex items-start justify-between gap-3 p-4">
+          <div class="min-w-0">
+            <p class="font-medium text-danger">{{ t("tsfile.error.loadFailed") }}</p>
+            <p class="mt-1 text-sm text-text-body">{{ metaError }}</p>
+          </div>
+          <el-button size="small" type="danger" class="flex-shrink-0" @click="goToQuickScan">
+            {{ t("tsfile.scan.quickScan") }}
+          </el-button>
+        </div>
+      </div>
     </template>
     <div v-else class="flex flex-col flex-1 min-h-0 gap-3">
       <div class="flex-shrink-0">

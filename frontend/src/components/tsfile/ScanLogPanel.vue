@@ -23,7 +23,6 @@
  */
 import type { LogEntry } from "@/stores/tsfile/scan";
 import { computed, nextTick, ref, watch } from "vue";
-import { Button } from "antdv-next";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -85,9 +84,9 @@ function toggleAutoScroll() {
 
 function levelClass(level: LogEntry["level"]): string {
   switch (level) {
-    case "ERROR": return "text-red-500";
-    case "WARN": return "text-amber-500";
-    default: return "text-gray-400";
+    case "ERROR": return "text-danger";
+    case "WARN": return "text-warning";
+    default: return "text-text-body";
   }
 }
 
@@ -99,18 +98,24 @@ watch(() => props.logs.length, () => {
 <template>
   <div class="flex flex-col gap-2">
     <div class="flex items-center justify-between">
-      <span class="text-xs text-gray-400">{{ logs.length }} {{ t("tsfile.scan.logEntries") }}</span>
-      <Button size="small" type="text" @click="toggleAutoScroll">
+      <span class="text-xs text-text-body">
+        {{ logs.length }} {{ t("tsfile.scan.logEntries") }}
+      </span>
+      <el-button size="small" link type="primary" @click="toggleAutoScroll">
         {{ autoScroll ? t("tsfile.scan.autoScrollOn") : t("tsfile.scan.autoScrollOff") }}
-      </Button>
+      </el-button>
     </div>
-    <div v-if="logs.length === 0" class="rounded border border-gray-200 bg-gray-50 py-8 text-center text-gray-400" :style="{ height: CONTAINER_HEIGHT + 'px' }">
+    <div
+      v-if="logs.length === 0"
+      class="flex items-center justify-center rounded-card border border-border-default bg-bg-subtle text-sm text-text-body"
+      :style="{ height: CONTAINER_HEIGHT + 'px' }"
+    >
       {{ t("tsfile.scan.logs") }}
     </div>
     <div
       v-else
       ref="scrollRef"
-      class="overflow-y-auto rounded border border-gray-200 bg-gray-50"
+      class="overflow-y-auto rounded-card border border-border-default bg-bg-subtle"
       :style="{ height: CONTAINER_HEIGHT + 'px' }"
       @scroll="handleScroll"
     >
@@ -125,9 +130,13 @@ watch(() => props.logs.length, () => {
             class="flex gap-2"
             :style="{ height: ITEM_HEIGHT + 'px', lineHeight: ITEM_HEIGHT + 'px' }"
           >
-            <span class="shrink-0 text-gray-400">{{ entry.timestamp.slice(11, 19) }}</span>
-            <span class="w-12 shrink-0 font-semibold" :class="levelClass(entry.level)">{{ entry.level }}</span>
-            <span class="truncate text-gray-700" :title="entry.message">{{ entry.message }}</span>
+            <span class="shrink-0 text-text-body">{{ entry.timestamp.slice(11, 19) }}</span>
+            <span class="w-12 shrink-0 font-medium" :class="levelClass(entry.level)">
+              {{ entry.level }}
+            </span>
+            <span class="truncate text-text-heading" :title="entry.message">
+              {{ entry.message }}
+            </span>
           </div>
         </div>
       </div>

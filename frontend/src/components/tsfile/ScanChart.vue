@@ -28,9 +28,12 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch, shallowRef } from "vu
 import * as echarts from "echarts";
 import { useI18n } from "vue-i18n";
 import { useScanStore } from "@/stores/tsfile/scan";
+import { getChartStyle, CHART_COLORS } from "@/theme/charts";
+import { useTheme } from "@/composables/useTheme";
 
 const { t } = useI18n();
 const scanStore = useScanStore();
+const { isDark } = useTheme();
 
 interface ChartDataItem {
   name: string;
@@ -62,15 +65,23 @@ function renderPie(data: ChartDataItem[]) {
   if (!pieRef.value) return;
   if (!pieChart.value) pieChart.value = echarts.init(pieRef.value);
 
+  const style = getChartStyle(isDark.value);
   const coloredData = data.map((item) => ({
     ...item,
     itemStyle: { color: healthStatusColors[item.name] || "#909399" },
   }));
 
   pieChart.value.setOption({
-    title: { text: t("tsfile.scan.healthStatusChart"), left: "center", textStyle: { fontSize: 14 } },
-    tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
-    legend: { bottom: "2%", left: "center" },
+    color: style.color,
+    backgroundColor: style.backgroundColor,
+    textStyle: style.textStyle,
+    title: {
+      text: t("tsfile.scan.healthStatusChart"),
+      left: "center",
+      textStyle: { ...style.title.textStyle, fontSize: 14 },
+    },
+    tooltip: { ...style.tooltip, trigger: "item", formatter: "{b}: {c} ({d}%)" },
+    legend: { ...style.legend, bottom: "2%", left: "center" },
     series: [{
       name: t("tsfile.scan.healthStatus"),
       type: "pie",
@@ -90,17 +101,35 @@ function renderBar(data: ChartDataItem[]) {
   if (!barRef.value) return;
   if (!barChart.value) barChart.value = echarts.init(barRef.value);
 
+  const style = getChartStyle(isDark.value);
   const names = data.map((item) => t(`tsfile.scan.errorTypeName.${item.name}`));
   const values = data.map((item) => item.value);
   const originalNames = data.map((item) => item.name);
 
   barChart.value.setOption({
-    title: { text: t("tsfile.scan.errorTypeChart"), left: "center", textStyle: { fontSize: 14 } },
-    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    color: style.color,
+    backgroundColor: style.backgroundColor,
+    textStyle: style.textStyle,
+    title: {
+      text: t("tsfile.scan.errorTypeChart"),
+      left: "center",
+      textStyle: { ...style.title.textStyle, fontSize: 14 },
+    },
+    tooltip: { ...style.tooltip, trigger: "axis", axisPointer: { type: "shadow" } },
     grid: { left: "3%", right: "4%", bottom: "3%", containLabel: true },
-    xAxis: { type: "category", data: names, axisLabel: { rotate: 30, fontSize: 11 } },
-    yAxis: { type: "value", name: t("tsfile.scan.fileCount"), minInterval: 1 },
-    series: [{ name: t("tsfile.scan.fileCount"), type: "bar", data: values, itemStyle: { color: "#1677ff" }, barMaxWidth: 40 }],
+    xAxis: {
+      ...style.categoryAxis,
+      type: "category",
+      data: names,
+      axisLabel: { ...style.categoryAxis.axisLabel, rotate: 30, fontSize: 11 },
+    },
+    yAxis: {
+      ...style.valueAxis,
+      type: "value",
+      name: t("tsfile.scan.fileCount"),
+      minInterval: 1,
+    },
+    series: [{ name: t("tsfile.scan.fileCount"), type: "bar", data: values, itemStyle: { color: CHART_COLORS[0] }, barMaxWidth: 40 }],
   }, true);
 
   barChart.value.off("click");
@@ -137,6 +166,7 @@ function tryRenderCharts() {
 watch(() => props.healthStatusData, () => tryRenderCharts(), { deep: true });
 watch(() => props.errorTypeData, () => tryRenderCharts(), { deep: true });
 watch(mounted, (val) => { if (val) tryRenderCharts(); });
+watch(isDark, () => tryRenderCharts());
 </script>
 
 <template>

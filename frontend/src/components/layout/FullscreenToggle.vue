@@ -18,17 +18,17 @@
 -->
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { Button } from 'antdv-next';
-import { FullscreenOutlined, FullscreenExitOutlined } from '@antdv-next/icons';
+/** FullscreenToggle - 全屏进入 / 退出。 */
+import { onMounted, onUnmounted, ref } from "vue";
+import { Maximize, Minimize } from "lucide-vue-next";
 
 const isFullscreen = ref(false);
 
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
+    void document.documentElement.requestFullscreen();
   } else {
-    document.exitFullscreen();
+    void document.exitFullscreen();
   }
 }
 
@@ -37,19 +37,22 @@ function handleFullscreenChange() {
 }
 
 onMounted(() => {
-  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
 });
 
 onUnmounted(() => {
-  document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  document.removeEventListener("fullscreenchange", handleFullscreenChange);
 });
 </script>
 
 <template>
-  <Button type="text" style="color: #fff;" size="small" aria-label="Toggle Fullscreen" @click="toggleFullscreen">
-    <template #icon>
-      <FullscreenExitOutlined v-if="isFullscreen" />
-      <FullscreenOutlined v-else />
-    </template>
-  </Button>
+  <button
+    type="button"
+    class="tc-tool-button"
+    aria-label="Toggle Fullscreen"
+    @click="toggleFullscreen"
+  >
+    <Minimize v-if="isFullscreen" class="h-4 w-4" :stroke-width="1.75" />
+    <Maximize v-else class="h-4 w-4" :stroke-width="1.75" />
+  </button>
 </template>

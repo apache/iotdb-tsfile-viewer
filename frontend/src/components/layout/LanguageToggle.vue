@@ -18,41 +18,43 @@
 -->
 
 <script setup lang="ts">
-import { Button, Dropdown } from 'antdv-next';
-import { GlobalOutlined } from '@antdv-next/icons';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+/** LanguageToggle - 中文 / English 切换，选中项自行高亮。 */
+import { useI18n } from "vue-i18n";
+import { Languages } from "lucide-vue-next";
 
-import { usePreferencesStore, type Language } from '@/stores/preferences';
+import { usePreferencesStore, type Language } from "@/stores/preferences";
 
 const preferencesStore = usePreferencesStore();
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 
-const languageOptions = [
-  { key: 'zh-CN', label: '中文' },
-  { key: 'en-US', label: 'English' },
+const languageOptions: { key: Language; label: string }[] = [
+  { key: "zh-CN", label: "中文" },
+  { key: "en-US", label: "English" },
 ];
 
-const currentLanguageLabel = computed(() => {
-  const option = languageOptions.find((opt) => opt.key === preferencesStore.language);
-  return option?.label || '中文';
-});
-
-const menuProps = computed(() => ({
-  items: languageOptions,
-  selectedKeys: [preferencesStore.language],
-  onClick: ({ key }: { key: string }) => {
-    const language = key as Language;
-    preferencesStore.setLanguage(language);
-    locale.value = language;
-  },
-}));
+function handleCommand(command: Language) {
+  preferencesStore.setLanguage(command);
+  locale.value = command;
+}
 </script>
 
 <template>
-  <Dropdown :menu="menuProps" placement="bottomRight" :trigger="['click']">
-    <Button type="text" style="color: #fff;" size="small" aria-label="Switch Language">
-      <template #icon><GlobalOutlined /></template>
-    </Button>
-  </Dropdown>
+  <el-dropdown trigger="click" placement="top-end" @command="handleCommand">
+    <button type="button" class="tc-tool-button" :aria-label="t('tsfile.common.language')">
+      <Languages class="h-4 w-4" :stroke-width="1.75" />
+    </button>
+
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item
+          v-for="option in languageOptions"
+          :key="option.key"
+          :command="option.key"
+          :class="{ 'is-current': option.key === preferencesStore.language }"
+        >
+          {{ option.label }}
+        </el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
 </template>

@@ -27,7 +27,10 @@ import type { Measurement } from "@/api/tsfile/types";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Card, Input, Spin, Table, Tag } from "antdv-next";
+import { Search } from "lucide-vue-next";
+
+import { tableStyleProps } from "@/utils/tableStyle";
+import { getDataTypeTagType } from "@/utils/dataTypeTag";
 
 interface Props {
   measurements: Measurement[];
@@ -55,125 +58,89 @@ const filteredMeasurements = computed(() => {
 });
 
 // 非 VECTOR 类型的总数
-const totalNonVector = computed(() => props.measurements.filter((m) => m.dataType !== "VECTOR").length);
+const totalNonVector = computed(
+  () => props.measurements.filter((m) => m.dataType !== "VECTOR").length,
+);
 
 // 是否显示 columnCategory 列
-const hasColumnCategory = computed(() => props.measurements.some((m) => m.columnCategory));
-
-// 数据类型颜色映射（与 TablesTable 保持一致）
-function getDataTypeColor(dataType: string): string | undefined {
-  const colorMap: Record<string, string> = {
-    INT32: "blue",
-    INT64: "blue",
-    FLOAT: "green",
-    DOUBLE: "green",
-    BOOLEAN: "orange",
-    TEXT: "cyan",
-    STRING: "cyan",
-  };
-  return colorMap[dataType];
-}
-
-const columns = computed(() => {
-  const cols: Array<{ title: string; dataIndex: string; key: string; width?: number }> = [
-    {
-      title: t("tsfile.metadata.measurementName"),
-      dataIndex: "name",
-      key: "name",
-    },
-  ];
-
-  if (hasColumnCategory.value) {
-    cols.push({
-      title: t("tsfile.metadata.columnCategory"),
-      dataIndex: "columnCategory",
-      key: "columnCategory",
-      width: 100,
-    });
-  }
-
-  cols.push(
-    {
-      title: t("tsfile.metadata.dataType"),
-      dataIndex: "dataType",
-      key: "dataType",
-      width: 120,
-    },
-    {
-      title: t("tsfile.metadata.encoding"),
-      dataIndex: "encoding",
-      key: "encoding",
-      width: 120,
-    },
-    {
-      title: t("tsfile.metadata.compression"),
-      dataIndex: "compression",
-      key: "compression",
-      width: 120,
-    },
-  );
-
-  return cols;
-});
+const hasColumnCategory = computed(() =>
+  props.measurements.some((m) => m.columnCategory),
+);
 </script>
 
 <template>
-  <Card>
-    <template #title>
-      <div class="flex items-center justify-between">
-        <span class="font-semibold">
-          {{ t("tsfile.metadata.measurements") }}
-          <span class="ml-2 text-sm font-normal text-gray-500">
-            ({{ filteredMeasurements.length }} / {{ totalNonVector }})
-          </span>
+  <div class="tc-panel">
+    <div class="tc-panel-title">
+      <span>
+        {{ t("tsfile.metadata.measurements") }}
+        <span class="ml-2 text-xs text-text-body tnum">
+          ({{ filteredMeasurements.length }} / {{ totalNonVector }})
         </span>
-        <Input
-          v-model:value="searchQuery"
-          :placeholder="t('tsfile.metadata.searchMeasurements')"
-          allow-clear
-          class="w-64"
-          size="small"
-        >
-          <template #prefix>
-            <span class="i-mdi:magnify" />
-          </template>
-        </Input>
-      </div>
-    </template>
-
-    <Spin :spinning="loading">
-      <Table
-        :data-source="filteredMeasurements"
-        :columns="columns"
-        :pagination="false"
-        :scroll="{ y: props.scrollY }"
-        row-key="name"
+      </span>
+      <el-input
+        v-model="searchQuery"
+        :placeholder="t('tsfile.metadata.searchMeasurements')"
+        clearable
+        class="w-64"
         size="small"
-        bordered
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'name'">
-            <span class="font-medium">{{ record.name }}</span>
-          </template>
-          <template v-else-if="column.key === 'dataType'">
-            <Tag :color="getDataTypeColor(record.dataType)">
-              {{ record.dataType }}
-            </Tag>
-          </template>
-          <template v-else-if="column.key === 'columnCategory'">
-            <Tag
-              v-if="record.columnCategory"
-              :color="record.columnCategory === 'TAG' ? 'orange' : 'green'"
-            >
-              {{ record.columnCategory }}
-            </Tag>
-          </template>
+        <template #prefix>
+          <Search class="h-3.5 w-3.5" :stroke-width="1.75" />
         </template>
-      </Table>
+      </el-input>
+    </div>
 
-      <div v-if="measurements.length === 0" class="py-8 text-center text-gray-500">
-        {{ t("tsfile.metadata.noMeasurements") }}
+    <div class="p-4">
+      <div class="tc-table-card">
+        <el-table
+          v-bind="tableStyleProps"
+          v-loading="loading"
+          :data="filteredMeasurements"
+          :max-height="props.scrollY"
+          row-key="name"
+          size="small"
+          border
+          :empty-text="t('tsfile.metadata.noMeasurements')"
+        >
+          <el-table-column
+            :label="t('tsfile.metadata.measurementName')"
+            prop="name"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="hasColumnCategory"
+            :label="t('tsfile.metadata.columnCategory')"
+            :width="100"
+          >
+            <template #default="{ row }">
+              <el-tag
+                v-if="row.columnCategory"
+                :type="row.columnCategory === 'TAG' ? 'warning' : 'success'"
+                size="small"
+              >
+                {{ row.columnCategory }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('tsfile.metadata.dataType')" :width="120">
+            <template #default="{ row }">
+              <el-tag :type="getDataTypeTagType(row.dataType)" size="small">
+                {{ row.dataType }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="t('tsfile.metadata.encoding')"
+            prop="encoding"
+            :width="120"
+          />
+          <el-table-column
+            :label="t('tsfile.metadata.compression')"
+            prop="compression"
+            :width="120"
+          />
+        </el-table>
       </div>
-    </Spin>
-  </Card>
+    </div>
+  </div>
 </template>

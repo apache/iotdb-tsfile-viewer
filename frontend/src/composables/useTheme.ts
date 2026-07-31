@@ -19,22 +19,15 @@
 
 /**
  * useTheme Composable - Theme management with system preference detection
+ *
+ * 主题切换通过在 <html> 上增删 `dark` class 完成，取值由
+ * src/styles/tokens.css 与 Element Plus 的暗色 CSS 变量提供。
  */
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { theme } from "antdv-next";
 
 import { usePreferencesStore } from "../stores/preferences";
-import {
-  stripeComponentTokens,
-  stripeDarkLayoutTokens,
-  stripeDarkTokens,
-  stripeLightLayoutTokens,
-  stripeLightTokens,
-} from "../theme/stripeTheme";
 
 import type { Theme } from "../stores/preferences";
-
-const { defaultAlgorithm, darkAlgorithm } = theme;
 
 export function useTheme() {
   const preferencesStore = usePreferencesStore();
@@ -59,20 +52,6 @@ export function useTheme() {
     // 'auto' mode: follow system preference
     return systemPrefersDark.value;
   });
-
-  // Compute theme algorithm for antdv-next ConfigProvider
-  const themeAlgorithm = computed(() => {
-    return isDark.value ? darkAlgorithm : defaultAlgorithm;
-  });
-
-  const themeConfig = computed(() => ({
-    token: isDark.value ? stripeDarkTokens : stripeLightTokens,
-    algorithm: themeAlgorithm.value,
-    components: {
-      ...stripeComponentTokens,
-      ...(isDark.value ? stripeDarkLayoutTokens : stripeLightLayoutTokens),
-    },
-  }));
 
   // Set theme
   function setTheme(newTheme: Theme) {
@@ -141,8 +120,6 @@ export function useTheme() {
   return {
     theme: computed(() => preferencesStore.theme),
     isDark,
-    themeAlgorithm,
-    themeConfig,
     setTheme,
     toggleTheme,
   };

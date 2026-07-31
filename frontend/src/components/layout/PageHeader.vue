@@ -18,33 +18,31 @@
 -->
 
 <script setup lang="ts">
-/** RefreshButton - 整页重载。旋转动画用 CSS，Element Plus 图标没有 spin 属性。 */
-import { ref } from "vue";
-import { useI18n } from "vue-i18n";
-import { RotateCw } from "lucide-vue-next";
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-const { t } = useI18n();
-const isRefreshing = ref(false);
-
-function handleRefresh() {
-  isRefreshing.value = true;
-  router.go(0);
-}
+/**
+ * PageHeader - 页面标题区。
+ *
+ * 存在的意义是把标题字号/字重集中到 `.tc-page-title` 一处，
+ * 避免各视图页各写一套 `text-xl font-bold` 导致字重不统一。
+ * 右侧操作区通过 `actions` 插槽提供。
+ */
+withDefaults(
+  defineProps<{
+    title: string;
+    subtitle?: string;
+  }>(),
+  { subtitle: undefined },
+);
 </script>
 
 <template>
-  <button
-    type="button"
-    class="tc-tool-button"
-    :aria-label="t('tsfile.common.refresh')"
-    @click="handleRefresh"
-  >
-    <RotateCw
-      class="h-4 w-4"
-      :class="{ 'animate-spin': isRefreshing }"
-      :stroke-width="1.75"
-    />
-  </button>
+  <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h1 class="tc-page-title">{{ title }}</h1>
+      <p v-if="subtitle" class="tc-page-subtitle">{{ subtitle }}</p>
+      <slot name="subtitle" />
+    </div>
+    <div v-if="$slots.actions" class="flex flex-shrink-0 items-center gap-2">
+      <slot name="actions" />
+    </div>
+  </div>
 </template>

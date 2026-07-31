@@ -20,7 +20,7 @@
 <script setup lang="ts">
 /**
  * RecentFiles 组件 - 最近打开的文件列表
- * 使用 antdv-next Table 组件显示最近文件
+ * 用 el-table 当无表头列表渲染，整行点击进入数据预览
  */
 import type { FileInfo } from "@/stores/tsfile/file";
 
@@ -28,21 +28,14 @@ import { onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import { Button, Card, Empty, Table } from "antdv-next";
-import { CloseOutlined, FileTextOutlined } from "@antdv-next/icons";
+import { FileText, X } from "lucide-vue-next";
 
 import { useFileStore } from "@/stores/tsfile/file";
+import { tableStyleProps } from "@/utils/tableStyle";
 
 const { t } = useI18n();
 const router = useRouter();
 const fileStore = useFileStore();
-
-const columns = [
-  {
-    key: "file",
-    dataIndex: "name",
-  },
-];
 
 /**
  * 处理文件点击
@@ -57,7 +50,10 @@ function handleFileClick(file: FileInfo) {
  */
 function removeFile(fileId: string) {
   fileStore.recentFiles = fileStore.recentFiles.filter((f) => f.fileId !== fileId);
-  localStorage.setItem("tsfile-viewer-recent-files", JSON.stringify(fileStore.recentFiles));
+  localStorage.setItem(
+    "tsfile-viewer-recent-files",
+    JSON.stringify(fileStore.recentFiles),
+  );
 }
 
 /**
@@ -92,67 +88,58 @@ onMounted(() => {
 </script>
 
 <template>
-  <Card class="recent-files">
-    <template #title>
-      <span class="font-semibold">{{ t("tsfile.file.recentFiles") }}</span>
-    </template>
+  <div class="tc-panel recent-files">
+    <div class="tc-panel-title">
+      <span>{{ t("tsfile.file.recentFiles") }}</span>
+    </div>
 
     <!-- 空状态 -->
-    <Empty
+    <el-empty
       v-if="fileStore.recentFiles.length === 0"
       :description="t('tsfile.file.noRecentFiles')"
+      :image-size="72"
     />
 
     <!-- 文件列表 -->
-    <Table
-      v-else
-      :data-source="fileStore.recentFiles"
-      :columns="columns"
-      :show-header="false"
-      :pagination="false"
-      row-key="fileId"
-      :custom-row="(record: FileInfo) => ({ onClick: () => handleFileClick(record) })"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'file'">
-          <div class="flex items-center gap-3 py-2">
-            <FileTextOutlined class="file-icon" />
-            <div class="min-w-0 flex-1">
-              <p class="truncate font-medium">{{ (record as FileInfo).name }}</p>
-              <p class="truncate text-sm text-gray-500">{{ (record as FileInfo).path }}</p>
+    <div v-else class="tc-table-card !rounded-none !border-0">
+      <el-table
+        v-bind="tableStyleProps"
+        :data="fileStore.recentFiles"
+        :show-header="false"
+        row-key="fileId"
+        @row-click="handleFileClick"
+      >
+        <el-table-column prop="name">
+          <template #default="{ row }">
+            <div class="flex items-center gap-3 py-1">
+              <FileText class="h-5 w-5 flex-shrink-0 text-primary" :stroke-width="1.75" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-text-heading">{{ row.name }}</p>
+                <p class="truncate text-xs text-text-body">{{ row.path }}</p>
+              </div>
+              <div class="flex flex-shrink-0 items-center gap-4 text-xs text-text-body tnum">
+                <span>{{ formatFileSize(row.size) }}</span>
+                <span>{{ formatDate(row.uploadTime) }}</span>
+              </div>
+              <el-button
+                link
+                type="danger"
+                size="small"
+                :aria-label="t('tsfile.common.delete')"
+                @click.stop="removeFile(row.fileId)"
+              >
+                <X class="h-4 w-4" :stroke-width="1.75" />
+              </el-button>
             </div>
-            <div class="flex items-center gap-4 text-sm text-gray-500">
-              <span>{{ formatFileSize((record as FileInfo).size) }}</span>
-              <span>{{ formatDate((record as FileInfo).uploadTime) }}</span>
-            </div>
-            <Button
-              type="text"
-              danger
-              size="small"
-              @click.stop="removeFile((record as FileInfo).fileId)"
-            >
-              <template #icon>
-                <CloseOutlined />
-              </template>
-            </Button>
-          </div>
-        </template>
-      </template>
-    </Table>
-  </Card>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.recent-files :deep(.ant-table-row) {
+.recent-files :deep(.el-table__row) {
   cursor: pointer;
-}
-
-.recent-files :deep(.ant-table-row:hover > td) {
-  background-color: var(--ant-color-fill-secondary, #f5f5f5) !important;
-}
-
-.file-icon {
-  font-size: 1.5rem;
-  color: var(--ant-color-primary, #1677ff);
 }
 </style>

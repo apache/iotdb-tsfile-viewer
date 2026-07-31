@@ -18,21 +18,16 @@
 -->
 
 <script setup lang="ts">
-import { HappyProvider } from "@antdv-next/happy-work-theme";
-import {
-  ConfigProvider,
-  Layout,
-  LayoutContent,
-  LayoutHeader as AntLayoutHeader,
-  LayoutSider,
-} from "antdv-next";
-import zhCN from "antdv-next/dist/locale/zh_CN";
-import enUS from "antdv-next/dist/locale/en_US";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import LayoutHeader from "./components/layout/LayoutHeader.vue";
+import { ElConfigProvider } from "element-plus";
+import zhCn from "element-plus/es/locale/lang/zh-cn";
+import en from "element-plus/es/locale/lang/en";
+import { Menu } from "lucide-vue-next";
+
+import AppSidebar from "./components/layout/AppSidebar.vue";
 import FileTree from "./components/tsfile/FileTree.vue";
 import { useFileStore } from "./stores/tsfile/file";
 import { useTheme } from "./composables/useTheme";
@@ -41,19 +36,19 @@ const router = useRouter();
 const route = useRoute();
 const fileStore = useFileStore();
 const { locale } = useI18n();
-const { themeConfig, isDark } = useTheme();
-const collapsed = ref(false);
-const happyMode = ref(true);
 
-const isOnScanPage = computed(() => route.name === 'FileScan');
+// 挂载 useTheme 以建立 <html>.dark 的同步与系统偏好监听
+useTheme();
 
-const antdLocale = computed(() => {
-  return locale.value === "zh-CN" ? zhCN : enUS;
-});
+const sidebarOpen = ref(false);
+
+const isOnScanPage = computed(() => route.name === "FileScan");
+
+const elementLocale = computed(() => (locale.value === "zh-CN" ? zhCn : en));
 
 function handleFileSelect(fileId: string, path: string, name: string) {
   if (isOnScanPage.value) {
-    fileStore.setScanTarget(path, 'file');
+    fileStore.setScanTarget(path, "file");
   } else {
     fileStore.setCurrentFile(fileId, name);
     router.push(`/tsfile/data/${fileId}`);
@@ -62,35 +57,40 @@ function handleFileSelect(fileId: string, path: string, name: string) {
 
 function handleDirectorySelect(path: string, _name: string) {
   if (isOnScanPage.value) {
-    fileStore.setScanTarget(path, 'directory');
+    fileStore.setScanTarget(path, "directory");
   }
 }
 </script>
 
 <template>
-  <HappyProvider :enabled="happyMode" v-slot="{ wave }">
-    <ConfigProvider :locale="antdLocale" :wave="wave" :theme="themeConfig">
-      <Layout style="height: 100vh; overflow: hidden;">
-        <AntLayoutHeader style="line-height: normal; height: 48px; padding: 0; flex-shrink: 0;">
-          <LayoutHeader />
-        </AntLayoutHeader>
-        <Layout style="flex: 1; overflow: hidden;">
-          <LayoutSider
-            v-model:collapsed="collapsed"
-            collapsible
-            :width="280"
-            :collapsed-width="0"
-            :theme="isDark ? 'dark' : 'light'"
+  <ElConfigProvider :locale="elementLocale">
+    <div class="flex h-screen overflow-hidden bg-bg-app">
+      <AppSidebar :open="sidebarOpen" @close="sidebarOpen = false">
+        <template #tree>
+          <FileTree @select="handleFileSelect" @select-directory="handleDirectorySelect" />
+        </template>
+      </AppSidebar>
+
+      <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <!-- 窄屏顶部条 -->
+        <header
+          class="flex h-12 flex-shrink-0 items-center gap-3 border-b border-border-default bg-bg-card px-4 lg:hidden"
+        >
+          <button
+            type="button"
+            class="tc-nav-item !p-1.5"
+            aria-label="Toggle navigation"
+            @click="sidebarOpen = !sidebarOpen"
           >
-            <div style="padding: 16px; overflow: hidden; height: 100%;">
-              <FileTree @select="handleFileSelect" @select-directory="handleDirectorySelect" />
-            </div>
-          </LayoutSider>
-          <LayoutContent style="padding: 16px; overflow: hidden; display: flex; flex-direction: column;">
-            <RouterView />
-          </LayoutContent>
-        </Layout>
-      </Layout>
-    </ConfigProvider>
-  </HappyProvider>
+            <Menu class="h-5 w-5" :stroke-width="1.75" />
+          </button>
+          <span class="text-[0.9375rem] text-text-heading">TsFile Viewer</span>
+        </header>
+
+        <main class="flex flex-1 flex-col overflow-y-auto p-4 lg:p-6">
+          <RouterView />
+        </main>
+      </div>
+    </div>
+  </ElConfigProvider>
 </template>

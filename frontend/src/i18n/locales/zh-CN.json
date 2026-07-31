@@ -2,7 +2,9 @@
   "tsfile": {
     "app": {
       "title": "TsFile 查看器",
-      "description": "Apache TsFile 格式数据查看和分析工具"
+      "description": "Apache TsFile 格式数据查看和分析工具",
+      "resizeSidebar": "调整侧栏宽度",
+      "resizeSidebarHint": "拖动调整宽度，双击恢复默认"
     },
     "nav": {
       "home": "首页",
@@ -205,7 +207,12 @@
       "maxConditionsReached": "最多支持 10 个条件",
       "searchColumn": "搜索字段列",
       "columnsPerPage": "每页列数",
-      "columns": "字段列"
+      "columns": "字段列",
+      "rowRange": "第 {start}–{end} 行",
+      "rowRangeTotal": "第 {start}–{end} 行，共 {total} 行",
+      "pageNumber": "第 {page} 页",
+      "prevPage": "上一页",
+      "nextPage": "下一页"
     },
     "chart": {
       "title": "图表可视化",
@@ -247,6 +254,8 @@
       "fileScan": "单文件扫描",
       "directoryPlaceholder": "请输入要扫描的目录路径...",
       "sidebarHint": "提示：点击左侧目录树中的文件夹可自动填入路径",
+      "idleTitle": "尚未开始扫描",
+      "idleHint": "从左侧文件树选择一个目录或 TsFile 文件，或在上方直接输入路径，然后点击「开始扫描」。",
       "filePlaceholder": "请输入要检测的 TsFile 文件路径...",
       "quickScan": "快速扫描",
       "startScan": "开始扫描",

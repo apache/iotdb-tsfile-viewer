@@ -1,0 +1,63 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+// Element Plus SCSS 变量覆盖：只列与默认值不同的项，其余沿用组件库默认。
+//
+// 该文件由 vite 的 css.preprocessorOptions.scss.additionalData 注入到每个
+// scss 入口，因此这里**不能**再 @use 'element-plus/theme-chalk/src/index.scss'，
+// 否则全量样式会被重复打包。暗色变量由 main.ts 引入
+// 'element-plus/theme-chalk/dark/css-vars.css' 提供。
+
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+  $colors: (
+    'primary': (
+      'base': #495ad4,
+    ),
+    'success': (
+      'base': #67c23a,
+    ),
+    'warning': (
+      'base': #e6a23c,
+    ),
+    'danger': (
+      'base': #f56c6c,
+    ),
+    'error': (
+      'base': #f56c6c,
+    ),
+    'info': (
+      'base': #909399,
+    ),
+  ),
+  $text-color: (
+    'primary': #061b31,
+    'regular': #64748d,
+    'secondary': #273951,
+  ),
+  $border-color: (
+    '': #e5edf5,
+  ),
+  $border-radius: (
+    'base': 0.25rem,
+  ),
+  $font-family: (
+    '':
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif",
+  )
+);

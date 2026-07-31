@@ -20,14 +20,14 @@
 <script setup lang="ts">
 /**
  * ChartPanel - ECharts 折线图面板
- * 使用 antdv-next 组件
  */
 import type { ChartSeries, TimeRange } from "@/api/tsfile/types";
 
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { Alert, Spin } from "antdv-next";
+import { getChartStyle } from "@/theme/charts";
+import { useTheme } from "@/composables/useTheme";
 import { LineChart } from "echarts/charts";
 import {
   DataZoomComponent,
@@ -65,6 +65,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
+const { isDark } = useTheme();
 
 // 单图最多渲染的序列数，超过则拒绝绘制并提示（防止数千条折线卡死浏览器）
 const MAX_CHART_SERIES = 50;
@@ -80,6 +81,7 @@ function calcChartHeight() {
 }
 
 const chartOption = computed(() => {
+  const style = getChartStyle(isDark.value);
   const legendData = props.series.map((s) => s.name);
   const seriesData = props.series.map((s) => ({
     name: s.name,
@@ -91,7 +93,11 @@ const chartOption = computed(() => {
   }));
 
   return {
+    color: style.color,
+    backgroundColor: style.backgroundColor,
+    textStyle: style.textStyle,
     tooltip: {
+      ...style.tooltip,
       trigger: "axis" as const,
       axisPointer: { type: "cross" as const },
       formatter: (params: unknown) => {
@@ -116,12 +122,14 @@ const chartOption = computed(() => {
         return result;
       },
     },
-    legend: { data: legendData, type: "scroll" as const, bottom: 0 },
+    legend: { ...style.legend, data: legendData, type: "scroll" as const, bottom: 0 },
     grid: { left: "3%", right: "4%", bottom: "15%", top: "10%", containLabel: true },
     xAxis: {
+      ...style.timeAxis,
       type: "time" as const,
       boundaryGap: false,
       axisLabel: {
+        ...style.timeAxis.axisLabel,
         formatter: (value: number) => {
           const date = new Date(value);
           return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
@@ -129,6 +137,7 @@ const chartOption = computed(() => {
       },
     },
     yAxis: {
+      ...style.valueAxis,
       type: "value" as const,
     },
     dataZoom: [
@@ -182,6 +191,7 @@ watch(
     }
   },
 );
+watch(isDark, () => updateChart());
 
 onMounted(() => {
   calcChartHeight();
@@ -203,38 +213,44 @@ onUnmounted(() => {
 <template>
   <div class="h-full flex flex-col">
     <div class="flex items-center justify-between mb-2 flex-shrink-0">
-      <span class="font-semibold">{{ t("tsfile.chart.title") }}</span>
-      <div v-if="totalPoints > 0" class="text-sm text-gray-500">
+      <span class="font-semibold text-text-heading">{{ t("tsfile.chart.title") }}</span>
+      <div v-if="totalPoints > 0" class="text-sm text-text-body tnum">
         {{ t("tsfile.chart.totalPoints") }}: {{ totalPoints.toLocaleString() }}
       </div>
     </div>
 
-    <Alert
+    <el-alert
       v-if="downsampled"
       type="warning"
-      :message="t('tsfile.chart.downsampledWarning')"
-      :description="t('tsfile.chart.downsampledDescription')"
+      :title="t('tsfile.chart.downsampledWarning')"
       show-icon
+      :closable="false"
       class="mb-2 flex-shrink-0"
-    />
-    <Alert
+    >
+      {{ t("tsfile.chart.downsampledDescription") }}
+    </el-alert>
+    <el-alert
       v-if="error"
       type="error"
-      :message="t('tsfile.error.loadFailed')"
-      :description="error"
+      :title="t('tsfile.error.loadFailed')"
       show-icon
+      :closable="false"
       class="mb-2 flex-shrink-0"
-    />
-    <Alert
+    >
+      {{ error }}
+    </el-alert>
+    <el-alert
       v-else-if="tooManySeries"
       type="warning"
-      :message="t('tsfile.chart.tooManySeries', { count: series.length, max: MAX_CHART_SERIES })"
-      :description="t('tsfile.chart.tooManySeriesDescription', { max: MAX_CHART_SERIES })"
+      :title="t('tsfile.chart.tooManySeries', { count: series.length, max: MAX_CHART_SERIES })"
       show-icon
+      :closable="false"
       class="mb-2 flex-shrink-0"
-    />
+    >
+      {{ t("tsfile.chart.tooManySeriesDescription", { max: MAX_CHART_SERIES }) }}
+    </el-alert>
 
-    <Spin :spinning="loading">
+    <div v-loading="loading">
       <div
         v-show="!error && !tooManySeries && series.length > 0"
         ref="chartRef"
@@ -242,11 +258,11 @@ onUnmounted(() => {
       ></div>
       <div
         v-if="!loading && !error && !tooManySeries && series.length === 0"
-        class="flex items-center justify-center text-gray-500"
+        class="flex items-center justify-center text-text-body"
         :style="{ height: chartHeight + 'px' }"
       >
         {{ t("tsfile.chart.noData") }}
       </div>
-    </Spin>
+    </div>
   </div>
 </template>

@@ -22,11 +22,11 @@ import type { DataPreviewRequest, DataRow, TsFileMetadata } from "@/api/tsfile/t
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { Alert, Button } from "antdv-next";
 import { dataApi, metaApi } from "@/api/tsfile";
 import DataTable from "@/components/tsfile/DataTable.vue";
 import TableFilterPanel from "@/components/tsfile/TableFilterPanel.vue";
 import TreeFilterPanel from "@/components/tsfile/TreeFilterPanel.vue";
+import PageHeader from "@/components/layout/PageHeader.vue";
 import { useFileStore } from "@/stores/tsfile/file";
 import { normalizeToMs } from "@/utils/timestamp";
 import { decodeFileId } from "@/utils/fileId";
@@ -47,7 +47,6 @@ const displayFileName = computed(() => {
   }
 });
 const dataRows = ref<DataRow[]>([]);
-const total = ref(0);
 const currentOffset = ref(0);
 const currentLimit = ref(100);
 const hasMore = ref(false);
@@ -76,7 +75,6 @@ watch(
   (newId, oldId) => {
     if (newId && newId !== oldId) {
       dataRows.value = [];
-      total.value = 0;
       currentOffset.value = 0;
       hasMore.value = false;
       error.value = null;
@@ -114,7 +112,6 @@ async function loadData(filters: Record<string, unknown>) {
     };
     const response = await dataApi.previewData(request);
     dataRows.value = response.data;
-    total.value = response.total;
     currentOffset.value = response.offset;
     currentLimit.value = response.limit;
     hasMore.value = response.hasMore;
@@ -194,23 +191,25 @@ function goToQuickScan() {
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex items-center justify-between mb-3 flex-shrink-0">
-      <div>
-        <h2 class="text-xl font-bold">{{ t("tsfile.data.title") }}</h2>
-        <p class="text-gray-500 text-sm truncate max-w-lg">{{ displayFileName }}</p>
-      </div>
-      <div class="flex gap-2">
-        <Button @click="goBack">{{ t("tsfile.common.back") }}</Button>
-        <Button @click="goToMetadata">{{ t("tsfile.metadata.title") }}</Button>
-        <Button type="primary" @click="goToChart">{{ t("tsfile.chart.title") }}</Button>
-      </div>
-    </div>
+    <PageHeader :title="t('tsfile.data.title')" :subtitle="displayFileName">
+      <template #actions>
+        <el-button @click="goBack">{{ t("tsfile.common.back") }}</el-button>
+        <el-button @click="goToMetadata">{{ t("tsfile.metadata.title") }}</el-button>
+        <el-button type="primary" @click="goToChart">{{ t("tsfile.chart.title") }}</el-button>
+      </template>
+    </PageHeader>
     <template v-if="metaError">
-      <Alert type="error" show-icon :message="t('tsfile.error.loadFailed')" :description="metaError" class="mb-3">
-        <template #action>
-          <Button size="small" type="primary" danger @click="goToQuickScan">{{ t('tsfile.scan.quickScan') }}</Button>
-        </template>
-      </Alert>
+      <div class="tc-panel mb-3">
+        <div class="flex items-start justify-between gap-3 p-4">
+          <div class="min-w-0">
+            <p class="font-medium text-danger">{{ t("tsfile.error.loadFailed") }}</p>
+            <p class="mt-1 text-sm text-text-body">{{ metaError }}</p>
+          </div>
+          <el-button size="small" type="danger" class="flex-shrink-0" @click="goToQuickScan">
+            {{ t("tsfile.scan.quickScan") }}
+          </el-button>
+        </div>
+      </div>
     </template>
     <template v-else>
     <div class="flex-shrink-0">
@@ -221,23 +220,21 @@ function goToQuickScan() {
         @change="handleFilterChange"
       />
     </div>
-    <Alert
+    <el-alert
       v-if="warnings.length > 0"
       type="warning"
       show-icon
-      :message="t('tsfile.data.dataReadWarning')"
+      :closable="false"
+      :title="t('tsfile.data.dataReadWarning')"
       class="mt-3 flex-shrink-0"
     >
-      <template #description>
-        <ul class="m-0 pl-4">
-          <li v-for="(w, i) in warnings" :key="i">{{ w }}</li>
-        </ul>
-      </template>
-    </Alert>
+      <ul class="m-0 pl-4">
+        <li v-for="(w, i) in warnings" :key="i">{{ w }}</li>
+      </ul>
+    </el-alert>
     <div class="flex-1 mt-3 min-h-0">
       <DataTable
         :data="dataRows"
-        :total="total"
         :offset="currentOffset"
         :limit="currentLimit"
         :has-more="hasMore"

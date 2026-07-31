@@ -29,6 +29,14 @@ import java.util.List;
 public class DataPreviewResponse {
 
   private List<DataRow> data;
+
+  /**
+   * Number of rows this query materialized, not the size of the dataset.
+   *
+   * <p>Preview reads stop shortly past the requested page, so this is the true filtered total only
+   * when {@link #hasMore} is false; while {@code hasMore} is true it is just a lower bound. Page
+   * counts must be derived from {@code offset}/{@code limit}/{@code hasMore} instead.
+   */
   private int total;
   private int limit;
   private int offset;

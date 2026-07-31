@@ -19,15 +19,24 @@
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";
+import ElementPlus from "element-plus";
+import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import App from "./App.vue";
 import router from "./router";
 import { setupI18n } from "./i18n";
 import { usePreferencesStore } from "./stores/preferences";
-import "@unocss/reset/tailwind-compat.css";
-import "virtual:uno.css";
-import "./theme/stripe.css";
+// 顺序不能反：Element Plus 的暗色变量必须先加载，
+// 我们在 styles/index.css 里的 `.dark` 覆盖才能盖住组件库默认值。
+import "element-plus/theme-chalk/dark/css-vars.css";
+import "./styles/index.css";
 
 const app = createApp(App);
+
+app.use(ElementPlus);
+
+for (const [name, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(name, component);
+}
 
 const pinia = createPinia();
 app.use(pinia);
