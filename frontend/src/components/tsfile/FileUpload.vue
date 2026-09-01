@@ -56,8 +56,6 @@ const success = shallowRef(false);
 const uploadTimeoutMinutes = shallowRef(loadUploadTimeoutMinutes());
 const uploadTimeoutMs = computed(() => uploadTimeoutMinutes.value * 60_000);
 
-watch(uploadTimeoutMinutes, saveUploadTimeoutMinutes);
-
 function normalizeUploadTimeoutMinutes(value: unknown): number {
   const numericValue = typeof value === "number" ? value : Number(value);
 
@@ -106,6 +104,8 @@ function saveUploadTimeoutMinutes(value: number) {
 function updateUploadTimeout(value: number | null | undefined) {
   uploadTimeoutMinutes.value = normalizeUploadTimeoutMinutes(value);
 }
+
+watch(uploadTimeoutMinutes, saveUploadTimeoutMinutes);
 
 /**
  * 验证文件
