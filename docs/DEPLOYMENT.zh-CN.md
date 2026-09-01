@@ -236,8 +236,9 @@ server:
 spring:
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 2GB
+      # 为 multipart 请求头预留空间，文件本身仍限制为 2GB
+      max-request-size: 2050MB
 
 tsfile:
   # 允许访问的目录白名单
@@ -339,8 +340,8 @@ VITE_BASE_PATH=/custom-path pnpm build
    spring:
      servlet:
        multipart:
-         max-file-size: 100MB
-         max-request-size: 100MB
+         max-file-size: 2GB
+         max-request-size: 2050MB
    ```
 
 4. **跨域安全**：由于使用反向代理（同源策略），不需要在后端配置 CORS。建议在反向代理（如 Nginx）层处理安全头。

@@ -28,8 +28,9 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 2GB
+      # Keep the request cap slightly above the file cap for multipart headers.
+      max-request-size: 2050MB
       file-size-threshold: 2MB
   devtools:
     restart:

@@ -59,7 +59,8 @@ The application automatically detects which model your TsFile uses.
 **Upload Requirements:**
 
 - File must have `.tsfile` extension
-- Maximum file size: 100MB (configurable by administrator)
+- Maximum file size: 2GB (configurable by administrator)
+- Upload timeout: 30 minutes by default; adjust it in the upload panel when needed
 
 ### Recent Files
 
@@ -346,7 +347,7 @@ When your data exceeds the max points limit:
 **Upload fails:**
 
 - Check file extension is `.tsfile`
-- Verify file size is under 100MB
+- Verify file size is at most 2GB
 - Ensure file is not corrupted
 - Check network connection
 
