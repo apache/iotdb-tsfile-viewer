@@ -182,7 +182,7 @@ file: [binary data]
 **Error Responses:**
 
 - `400 Bad Request` - Invalid file type or corrupted file
-- `413 Payload Too Large` - File exceeds 100MB limit
+- `413 Payload Too Large` - File exceeds 2GB limit
 
 ---
 

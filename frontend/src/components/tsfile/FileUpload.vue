@@ -28,11 +28,11 @@ import type { UploadResponse } from "@/api/tsfile/types";
 // element-plus 未从公开入口导出 UploadAjaxError 类型，这里通过 onError 回调的参数类型间接推导
 type UploadErrorArg = Parameters<NonNullable<UploadRequestOptions["onError"]>>[0];
 
-import { ref } from "vue";
+import { computed, shallowRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { ElMessage } from "element-plus";
-import { CloudUpload, Loader2 } from "lucide-vue-next";
+import { CloudUpload, Loader2, Timer } from "lucide-vue-next";
 
 import { fileApi } from "@/api/tsfile";
 import { useFileStore } from "@/stores/tsfile/file";
@@ -45,10 +45,67 @@ const emit = defineEmits<{
 
 const fileStore = useFileStore();
 
-const uploading = ref(false);
-const progress = ref(0);
-const error = ref<null | string>(null);
-const success = ref(false);
+const UPLOAD_TIMEOUT_STORAGE_KEY = "tsfile-viewer:upload-timeout-minutes";
+const MIN_UPLOAD_TIMEOUT_MINUTES = 1;
+const MAX_UPLOAD_TIMEOUT_MINUTES = 24 * 60;
+
+const uploading = shallowRef(false);
+const progress = shallowRef(0);
+const error = shallowRef<null | string>(null);
+const success = shallowRef(false);
+const uploadTimeoutMinutes = shallowRef(loadUploadTimeoutMinutes());
+const uploadTimeoutMs = computed(() => uploadTimeoutMinutes.value * 60_000);
+
+function normalizeUploadTimeoutMinutes(value: unknown): number {
+  const numericValue = typeof value === "number" ? value : Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return fileApi.DEFAULT_UPLOAD_TIMEOUT_MINUTES;
+  }
+
+  return Math.min(
+    MAX_UPLOAD_TIMEOUT_MINUTES,
+    Math.max(MIN_UPLOAD_TIMEOUT_MINUTES, Math.trunc(numericValue)),
+  );
+}
+
+function loadUploadTimeoutMinutes(): number {
+  try {
+    if (typeof window === "undefined") {
+      return fileApi.DEFAULT_UPLOAD_TIMEOUT_MINUTES;
+    }
+
+    const storedValue = Number(window.localStorage.getItem(UPLOAD_TIMEOUT_STORAGE_KEY) ?? "");
+
+    if (
+      Number.isInteger(storedValue) &&
+      storedValue >= MIN_UPLOAD_TIMEOUT_MINUTES &&
+      storedValue <= MAX_UPLOAD_TIMEOUT_MINUTES
+    ) {
+      return storedValue;
+    }
+  } catch {
+    // Local storage can be unavailable in privacy-restricted browser contexts.
+  }
+
+  return fileApi.DEFAULT_UPLOAD_TIMEOUT_MINUTES;
+}
+
+function saveUploadTimeoutMinutes(value: number) {
+  try {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.setItem(UPLOAD_TIMEOUT_STORAGE_KEY, String(value));
+  } catch {
+    // The setting still applies to the current page when persistence is unavailable.
+  }
+}
+
+function updateUploadTimeout(value: number | null | undefined) {
+  uploadTimeoutMinutes.value = normalizeUploadTimeoutMinutes(value);
+}
+
+watch(uploadTimeoutMinutes, saveUploadTimeoutMinutes);
 
 /**
  * 验证文件
@@ -57,8 +114,13 @@ function beforeUpload(file: File): boolean {
   error.value = null;
   success.value = false;
 
-  if (!file.name.endsWith(".tsfile")) {
+  if (!file.name.toLowerCase().endsWith(".tsfile")) {
     error.value = t("tsfile.file.onlyTsFile");
+    return false;
+  }
+
+  if (file.size > fileApi.MAX_UPLOAD_FILE_SIZE_BYTES) {
+    error.value = t("tsfile.file.fileTooLarge");
     return false;
   }
 
@@ -75,7 +137,12 @@ async function httpRequest(options: UploadRequestOptions) {
   const file = options.file as File;
 
   try {
-    const response = await fileApi.uploadFile(file);
+    const response = await fileApi.uploadFile(file, {
+      timeoutMs: uploadTimeoutMs.value,
+      onProgress(percentage) {
+        progress.value = percentage;
+      },
+    });
     const data = response as UploadResponse;
 
     progress.value = 100;
@@ -101,8 +168,11 @@ async function httpRequest(options: UploadRequestOptions) {
     }, 2000);
   } catch (error_: unknown) {
     const message = error_ instanceof Error ? error_.message : "Upload failed";
-    error.value =
-      (error_ as { response?: { data?: { message?: string } } }).response?.data?.message || message;
+    const isTimeout = /timeout|timed out/i.test(message);
+    error.value = isTimeout
+      ? t("tsfile.file.uploadTimedOut", { minutes: uploadTimeoutMinutes.value })
+      : (error_ as { response?: { data?: { message?: string } } }).response?.data?.message ||
+        message;
     ElMessage.error(error.value);
     options.onError?.((error_ instanceof Error ? error_ : new Error(message)) as UploadErrorArg);
   } finally {
@@ -113,8 +183,29 @@ async function httpRequest(options: UploadRequestOptions) {
 
 <template>
   <div class="tc-panel file-upload">
-    <div class="tc-panel-title">
+    <div class="tc-panel-title upload-panel-title">
       <span>{{ t("tsfile.file.uploadFile") }}</span>
+      <div class="upload-timeout-setting">
+        <Timer class="upload-timeout-icon" :size="16" aria-hidden="true" />
+        <label class="upload-timeout-label" for="upload-timeout-minutes">
+          {{ t("tsfile.file.uploadTimeout") }}
+        </label>
+        <el-input-number
+          id="upload-timeout-minutes"
+          :model-value="uploadTimeoutMinutes"
+          class="upload-timeout-input"
+          size="small"
+          controls-position="right"
+          value-on-clear="min"
+          :min="MIN_UPLOAD_TIMEOUT_MINUTES"
+          :max="MAX_UPLOAD_TIMEOUT_MINUTES"
+          :step="5"
+          :disabled="uploading"
+          :aria-label="t('tsfile.file.uploadTimeoutMinutes')"
+          @update:model-value="updateUploadTimeout"
+        />
+        <span class="upload-timeout-unit">{{ t("tsfile.file.minutes") }}</span>
+      </div>
     </div>
     <div class="p-5">
       <el-upload
@@ -172,6 +263,33 @@ async function httpRequest(options: UploadRequestOptions) {
   padding: 1rem;
 }
 
+.upload-panel-title {
+  flex-wrap: wrap;
+}
+
+.upload-timeout-setting {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-body);
+  font-size: 0.8125rem;
+}
+
+.upload-timeout-icon {
+  flex: none;
+  color: var(--primary);
+}
+
+.upload-timeout-label,
+.upload-timeout-unit {
+  white-space: nowrap;
+}
+
+.upload-timeout-input {
+  width: 7rem;
+}
+
 .upload-icon {
   margin-bottom: 1rem;
   color: var(--text-label);
@@ -199,5 +317,19 @@ async function httpRequest(options: UploadRequestOptions) {
 
 .upload-alert {
   margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .upload-panel-title {
+    align-items: flex-start;
+  }
+
+  .upload-timeout-setting {
+    width: 100%;
+  }
+
+  .upload-timeout-input {
+    margin-left: auto;
+  }
 }
 </style>

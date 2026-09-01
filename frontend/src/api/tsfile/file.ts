@@ -20,15 +20,30 @@
 import type { TreeNode, UploadResponse } from "./types";
 import { apiClient } from "../request";
 
+export const DEFAULT_UPLOAD_TIMEOUT_MINUTES = 30;
+export const MAX_UPLOAD_FILE_SIZE_BYTES = 2 * 1024 * 1024 * 1024;
+
+interface UploadFileOptions {
+  timeoutMs?: number;
+  onProgress?: (percentage: number) => void;
+}
+
 export function getTree(root?: string, path?: string) {
   return apiClient.get<unknown, TreeNode | TreeNode[]>("/files/tree", { params: { root, path } });
 }
 
-export function uploadFile(file: File) {
+export function uploadFile(file: File, options: UploadFileOptions = {}) {
   const formData = new FormData();
   formData.append("file", file);
+
   return apiClient.post<unknown, UploadResponse>("/files/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
+    timeout: options.timeoutMs ?? DEFAULT_UPLOAD_TIMEOUT_MINUTES * 60_000,
+    onUploadProgress(event) {
+      if (!event.total) return;
+
+      const percentage = Math.min(99, Math.round((event.loaded / event.total) * 100));
+      options.onProgress?.(percentage);
+    },
   });
 }
-

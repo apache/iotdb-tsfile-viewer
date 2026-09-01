@@ -195,8 +195,9 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 2GB
+      # Keep room for multipart headers while enforcing a 2GB file limit
+      max-request-size: 2050MB
       file-size-threshold: 2MB
 
 tsfile:
